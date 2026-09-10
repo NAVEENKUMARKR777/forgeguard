@@ -5,6 +5,43 @@ SDK, Workflows, Workers AI, Code Mode, and the Model Context Protocol.
 
 **Live deployment:** <https://forgeguard.forgeguard.workers.dev>
 
+## Try it now — no setup, no clone
+
+Open the link above and type these into the chat, in order:
+
+1. `Is PR #1842 safe to deploy?` — real risk scoring (64/100, HIGH) and a
+   plain-language explanation, from a live Llama 3.3 call on Workers AI.
+2. `Why is it risky?` — the scored breakdown behind that number.
+3. `What should I fix first?` — a concrete remediation plan built from the
+   actual failing checks.
+4. `Start the remediation workflow` — starts a real Cloudflare Workflow
+   instance; since this PR needs approval, it parks on `waitForEvent` and
+   the dashboard's Approve/Reject buttons light up. Click Approve to watch
+   it resume and roll out.
+5. `Investigate the payment-service incident` — pulls a real prior incident
+   out of shared Durable Object memory, the same one PR #1842's risk score
+   already factored in.
+
+Two other pages on the same URL, no login: **[/evals](https://forgeguard.forgeguard.workers.dev/evals)**
+(23 deterministic risk/policy/memory/incident/remediation checks, rendered
+from a real recorded run — not hand-typed numbers) and
+**[/productivity](https://forgeguard.forgeguard.workers.dev/productivity)**
+(PR cycle time, CI reliability, MTTR).
+
+For anyone who wants to check the MCP server directly, independent of the
+chat UI — this is a real JSON-RPC endpoint, not a mock:
+
+```bash
+curl -sN https://forgeguard.forgeguard.workers.dev/mcp \
+  -H 'Content-Type: application/json' \
+  -H 'Accept: application/json, text/event-stream' \
+  -d '{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"get_pull_request","arguments":{"number":1842}}}'
+```
+
+The full guided tour, including the incident-workflow and voice-input
+paths, is in [`docs/demo.md`](docs/demo.md) (written for local dev, but
+every prompt in it also works against the live URL above).
+
 ## Why it exists
 
 Given a pull request, ForgeGuard investigates it — evidence, CI, GitOps
