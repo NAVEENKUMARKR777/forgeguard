@@ -16,7 +16,7 @@ export type Intent =
  */
 export function classifyIntent(text: string): Intent {
   const normalized = text.toLowerCase();
-  const prMatch = normalized.match(/#?(\d{2,6})/);
+  const prMatch = normalized.match(/#?(\d{1,6})/);
 
   if (/\b(approve)\b/.test(normalized)) return { kind: "approve" };
   if (/\b(reject|deny|decline)\b/.test(normalized)) return { kind: "reject" };
