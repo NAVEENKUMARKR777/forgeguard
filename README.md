@@ -3,6 +3,8 @@
 AI release and incident commander, built on Cloudflare Workers, the Agents
 SDK, Workflows, Workers AI, Code Mode, and the Model Context Protocol.
 
+**Live deployment:** <https://forgeguard.forgeguard.workers.dev>
+
 ## Why it exists
 
 Given a pull request, ForgeGuard investigates it — evidence, CI, GitOps
