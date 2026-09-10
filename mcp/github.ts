@@ -21,6 +21,7 @@ interface GhCheckRun {
   name: string;
   status: string;
   conclusion: string | null;
+  started_at: string;
 }
 interface GhPullRequest {
   number: number;
@@ -60,6 +61,21 @@ async function githubGet<T>(env: Env, path: string): Promise<T | null> {
 function mapCheckRun(run: GhCheckRun): PullRequestCheck {
   const status = run.status !== "completed" ? "pending" : run.conclusion === "success" ? "passed" : "failed";
   return { name: run.name, status, detail: status === "failed" ? (run.conclusion ?? undefined) : undefined };
+}
+
+/** A commit can carry multiple check-runs under the same name (manual
+ * re-runs, a workflow re-triggering) — keep only the most recent one per
+ * name so policy evaluation sees current status, not a stale run that
+ * happens to sort earlier in GitHub's response. */
+function latestPerName(runs: GhCheckRun[]): GhCheckRun[] {
+  const latest = new Map<string, GhCheckRun>();
+  for (const run of runs) {
+    const existing = latest.get(run.name);
+    if (!existing || new Date(run.started_at) > new Date(existing.started_at)) {
+      latest.set(run.name, run);
+    }
+  }
+  return [...latest.values()];
 }
 
 function mapReview(review: GhReview): ReviewEntry {
@@ -113,7 +129,7 @@ export async function getPullRequest(env: Env, number: number): Promise<PullRequ
     headSha: pr.head.sha,
     files_changed: pr.changed_files ?? fileList.length,
     diff_summary,
-    checks: (checkRunsRes?.check_runs ?? []).map(mapCheckRun),
+    checks: latestPerName(checkRunsRes?.check_runs ?? []).map(mapCheckRun),
     test_coverage_delta: 0,
     touches_production_config: fileList.some((f) => /production/i.test(f.filename)),
     touches_database_migration: fileList.some((f) => /migrations?\//i.test(f.filename)),
