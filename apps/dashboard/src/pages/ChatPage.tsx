@@ -6,18 +6,31 @@ import { Sidebar } from "../components/Sidebar";
 import { ChatPanel } from "../components/ChatPanel";
 import { InvestigationPanel } from "../components/InvestigationPanel";
 
+const SESSION_ID_KEY = "forgeguard-session-id";
+
 function getSessionId(): string {
   try {
-    const key = "forgeguard-session-id";
-    let id = localStorage.getItem(key);
+    let id = localStorage.getItem(SESSION_ID_KEY);
     if (!id) {
       id = crypto.randomUUID();
-      localStorage.setItem(key, id);
+      localStorage.setItem(SESSION_ID_KEY, id);
     }
     return id;
   } catch {
     return "demo";
   }
+}
+
+/** A brand-new session id (and reload) is a genuinely fresh SessionAgent
+ * Durable Object instance — same as opening the dashboard in an
+ * incognito window, just without leaving your current one. */
+function startNewChat(): void {
+  try {
+    localStorage.removeItem(SESSION_ID_KEY);
+  } catch {
+    // localStorage unavailable — reloading still gets a fresh "demo" session
+  }
+  location.reload();
 }
 
 export function ChatPage() {
@@ -27,7 +40,7 @@ export function ChatPage() {
 
   return (
     <div className="grid h-full grid-cols-[220px_1fr_320px] grid-rows-[auto_1fr]">
-      <Header status={status} />
+      <Header status={status} onNewChat={startNewChat} />
       <Sidebar onSend={send} openPullRequests={openPullRequests} />
       <ChatPanel messages={state.messages} onSend={send} />
       <InvestigationPanel

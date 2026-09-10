@@ -7,7 +7,7 @@ const linkClass = ({ isActive }: { isActive: boolean }) =>
     isActive ? "bg-panel-3 text-ink" : "text-muted hover:text-ink"
   }`;
 
-export function Header({ status }: { status?: Status }) {
+export function Header({ status, onNewChat }: { status?: Status; onNewChat?: () => void }) {
   return (
     <header className="col-span-full flex items-center gap-3 border-b border-border px-5 py-2.5">
       <span className="text-lg">🛡️</span>
@@ -25,6 +25,14 @@ export function Header({ status }: { status?: Status }) {
         </NavLink>
       </nav>
       <div className="flex-1" />
+      {onNewChat && (
+        <button
+          onClick={onNewChat}
+          className="rounded-md border border-border-2 px-2.5 py-1 text-xs font-medium text-muted transition hover:border-accent hover:text-ink"
+        >
+          New chat
+        </button>
+      )}
       <a href="/mcp" className="text-xs text-accent hover:underline">
         MCP server
       </a>
