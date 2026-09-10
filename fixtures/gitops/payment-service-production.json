@@ -1,0 +1,14 @@
+{
+  "service": "payment-service",
+  "environment": "production",
+  "commits": [
+    { "sha": "a1b2c3d", "seq": 1 },
+    { "sha": "b2c3d4e", "seq": 2 },
+    { "sha": "c3d4e5f", "seq": 3 }
+  ],
+  "desiredCommit": "c3d4e5f",
+  "deployedCommit": "c3d4e5f",
+  "ciCommit": "c3d4e5f",
+  "deploymentStatus": "succeeded",
+  "healthStatus": "healthy"
+}

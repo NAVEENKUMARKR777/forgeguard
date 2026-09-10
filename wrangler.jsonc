@@ -1,0 +1,59 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "forgeguard",
+  "main": "src/worker.ts",
+  "compatibility_date": "2025-09-01",
+  "compatibility_flags": ["nodejs_compat"],
+  "observability": {
+    "enabled": true
+  },
+  "vars": {
+    "MODEL_PROVIDER": "workers-ai"
+  },
+  "ai": {
+    "binding": "AI"
+  },
+  "durable_objects": {
+    "bindings": [
+      { "name": "SESSION_AGENT", "class_name": "SessionAgent" },
+      { "name": "ENGINEERING_MEMORY", "class_name": "EngineeringMemoryStore" }
+    ]
+  },
+  "migrations": [
+    { "tag": "v1", "new_sqlite_classes": ["SessionAgent"] },
+    { "tag": "v2", "new_sqlite_classes": ["EngineeringMemoryStore"] }
+  ],
+  "workflows": [
+    {
+      "name": "forgeguard-release-workflow",
+      "binding": "RELEASE_WORKFLOW",
+      "class_name": "ReleaseWorkflow"
+    },
+    {
+      "name": "forgeguard-incident-workflow",
+      "binding": "INCIDENT_WORKFLOW",
+      "class_name": "IncidentWorkflow"
+    },
+    {
+      "name": "forgeguard-remediation-workflow",
+      "binding": "REMEDIATION_WORKFLOW",
+      "class_name": "RemediationWorkflow"
+    }
+  ],
+  "d1_databases": [
+    {
+      "binding": "EVAL_HISTORY_DB",
+      "database_name": "forgeguard-eval-history",
+      "database_id": "fea5bb5d-fbbc-45e3-bb56-4105e5538c65",
+      "migrations_dir": "migrations/eval-history"
+    }
+  ],
+  "rules": [
+    { "type": "Text", "globs": ["**/*.yaml"], "fallthrough": true }
+  ],
+  "assets": {
+    "directory": "apps/dashboard/dist",
+    "binding": "ASSETS",
+    "not_found_handling": "single-page-application"
+  }
+}

@@ -1,0 +1,14 @@
+{
+  "service": "checkout-service",
+  "environment": "production",
+  "commits": [
+    { "sha": "d4e5f6a", "seq": 1 },
+    { "sha": "e5f6a7b", "seq": 2 },
+    { "sha": "f6a7b8c", "seq": 3 }
+  ],
+  "desiredCommit": "f6a7b8c",
+  "deployedCommit": "d4e5f6a",
+  "ciCommit": "f6a7b8c",
+  "deploymentStatus": "succeeded",
+  "healthStatus": "healthy"
+}

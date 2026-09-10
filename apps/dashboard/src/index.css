@@ -1,0 +1,69 @@
+@import "tailwindcss";
+
+@theme {
+  --color-bg: #0b0d12;
+  --color-panel: #12141b;
+  --color-panel-2: #171a22;
+  --color-panel-3: #1a1d26;
+  --color-border: #23262f;
+  --color-border-2: #2c3040;
+  --color-ink: #e6e8ec;
+  --color-muted: #8b90a0;
+  --color-accent: #5b8def;
+  --color-accent-dim: #2b3a55;
+  --color-success: #3ecf6e;
+  --color-warning: #e0b23c;
+  --color-danger: #e05c5c;
+  --color-danger-dim: #4a1f1f;
+  --color-success-dim: #1f4a2c;
+  --font-sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-mono: ui-monospace, "SF Mono", "Cascadia Code", monospace;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  background: var(--color-bg);
+  color: var(--color-ink);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+}
+
+* {
+  scrollbar-color: var(--color-border-2) transparent;
+  scrollbar-width: thin;
+}
+
+@keyframes pulse-dot {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.35;
+  }
+}
+
+.animate-pulse-dot {
+  animation: pulse-dot 1.4s ease-in-out infinite;
+}
+
+@keyframes fade-in-up {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fade-in-up {
+  animation: fade-in-up 0.18s ease-out;
+}

@@ -1,0 +1,6 @@
+[
+  { "question": "Show me the failed CI jobs for PR 1842", "expected": "get_checks" },
+  { "question": "Is this pull request safe to review?", "expected": "get_pull_request" },
+  { "question": "What's the canary deployment health right now?", "expected": "get_deployment" },
+  { "question": "Have we had any incidents on this service before?", "expected": "get_incident_history" }
+]

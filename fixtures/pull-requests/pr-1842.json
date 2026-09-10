@@ -1,0 +1,30 @@
+{
+  "number": 1842,
+  "title": "Add retry logic to payment settlement",
+  "service": "payment-service",
+  "author": "j.rivera",
+  "files_changed": 37,
+  "diff_summary": [
+    { "path": "src/settlement/retry.ts", "additions": 120, "deletions": 4 },
+    { "path": "src/db/migrations/0042_add_settlement_lock.sql", "additions": 18, "deletions": 0 },
+    { "path": "infrastructure/production/payment-service.yaml", "additions": 6, "deletions": 2 }
+  ],
+  "checks": [
+    { "name": "unit-tests", "status": "passed" },
+    { "name": "integration-tests", "status": "failed", "detail": "settlement_lock_migration_test timed out" },
+    { "name": "security-scan", "status": "passed" }
+  ],
+  "test_coverage_delta": -4.2,
+  "touches_production_config": true,
+  "touches_database_migration": true,
+  "commits": [
+    { "sha": "9a1b2c3", "message": "Add retry wrapper around settlement call", "author": "j.rivera" },
+    { "sha": "8f0e1d2", "message": "Add settlement lock migration", "author": "j.rivera" },
+    { "sha": "7e9f0c1", "message": "Bump production replica count", "author": "j.rivera" }
+  ],
+  "reviews": [
+    { "reviewer": "m.chen", "state": "changes_requested", "comment": "Migration and app change should ship separately." },
+    { "reviewer": "a.patel", "state": "commented", "comment": "Retry backoff looks reasonable, want to see the migration fixed first." }
+  ],
+  "diff_text": "--- a/src/settlement/retry.ts\n+++ b/src/settlement/retry.ts\n@@ retry wrapper added around settlement call @@\n--- a/src/db/migrations/0042_add_settlement_lock.sql\n+++ b/src/db/migrations/0042_add_settlement_lock.sql\n@@ new settlement_lock table @@\n--- a/infrastructure/production/payment-service.yaml\n+++ b/infrastructure/production/payment-service.yaml\n@@ replica count 3 -> 5 @@"
+}

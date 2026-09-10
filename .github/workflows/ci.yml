@@ -1,0 +1,42 @@
+name: CI
+
+# No separate lint step: typescript-eslint's latest release (including
+# alpha channel) caps its `typescript` peer dependency at <6.1.0, and this
+# project uses TypeScript 7's native preview compiler — the two aren't
+# installable together yet. `npm run typecheck` runs in strict mode and is
+# the primary correctness gate; revisit once typescript-eslint catches up.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: npm ci
+      - run: npm run typecheck
+      - run: npm run test
+      - run: npm run evals
+      - run: npm run verify:mcp
+
+  # Separate job, not a step in `verify` above: a browser plus a live
+  # `wrangler dev` instance is a heavier, slower dependency than the rest of
+  # this project's checks need, and keeping it independent means a flaky or
+  # slow browser run never blocks the fast typecheck/unit/evals feedback
+  # loop. See docs/decisions/ADR-016-e2e-suite.md.
+  e2e:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
+      - run: npm run test:e2e

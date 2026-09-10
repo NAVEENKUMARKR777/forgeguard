@@ -1,0 +1,8 @@
+{
+  "id": "INC-1042",
+  "service": "payment-service",
+  "cause": "database connection exhaustion",
+  "resolution": "increase pool size",
+  "affected_service": "payments",
+  "learned_rule": "avoid simultaneous migration and deployment"
+}

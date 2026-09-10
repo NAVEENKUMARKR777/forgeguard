@@ -1,0 +1,70 @@
+[
+  {
+    "name": "failing-check-produces-a-fix-step",
+    "pr": {
+      "number": 9301,
+      "title": "test",
+      "service": "checkout-service",
+      "author": "test",
+      "files_changed": 3,
+      "diff_summary": [],
+      "checks": [{ "name": "integration-tests", "status": "failed", "detail": "timeout" }],
+      "test_coverage_delta": 0,
+      "touches_production_config": false,
+      "touches_database_migration": false
+    },
+    "policy": { "policyName": "production", "approvalRequired": false, "violations": [], "reasons": [] },
+    "expected": { "mustContain": ["integration-tests"], "mustNotContain": ["approval"] }
+  },
+  {
+    "name": "migration-produces-a-separate-deploy-step",
+    "pr": {
+      "number": 9302,
+      "title": "test",
+      "service": "payment-service",
+      "author": "test",
+      "files_changed": 3,
+      "diff_summary": [],
+      "checks": [],
+      "test_coverage_delta": 0,
+      "touches_production_config": false,
+      "touches_database_migration": true
+    },
+    "policy": { "policyName": "production", "approvalRequired": false, "violations": [], "reasons": [] },
+    "expected": { "mustContain": ["migration"], "mustNotContain": ["approval"] }
+  },
+  {
+    "name": "approval-required-produces-an-approval-step",
+    "pr": {
+      "number": 9303,
+      "title": "test",
+      "service": "identity-service",
+      "author": "test",
+      "files_changed": 3,
+      "diff_summary": [],
+      "checks": [],
+      "test_coverage_delta": 0,
+      "touches_production_config": true,
+      "touches_database_migration": false
+    },
+    "policy": { "policyName": "production", "approvalRequired": true, "violations": [], "reasons": ["production configuration change detected"] },
+    "expected": { "mustContain": ["approval"], "mustNotContain": [] }
+  },
+  {
+    "name": "clean-pr-always-still-recommends-canary",
+    "pr": {
+      "number": 9304,
+      "title": "test",
+      "service": "checkout-service",
+      "author": "test",
+      "files_changed": 1,
+      "diff_summary": [],
+      "checks": [],
+      "test_coverage_delta": 0,
+      "touches_production_config": false,
+      "touches_database_migration": false
+    },
+    "policy": { "policyName": "production", "approvalRequired": false, "violations": [], "reasons": [] },
+    "expected": { "mustContain": ["canary"], "mustNotContain": ["approval", "migration"] }
+  }
+]

@@ -1,0 +1,145 @@
+{
+  "ranAt": "2026-09-09T08:51:44.953Z",
+  "passed": 23,
+  "failed": 0,
+  "results": [
+    {
+      "suite": "risk",
+      "name": "docs-only-change",
+      "ok": true,
+      "detail": "got band=LOW approvalRequired=false (total=7)"
+    },
+    {
+      "suite": "risk",
+      "name": "auth-change-with-failing-tests",
+      "ok": true,
+      "detail": "got band=MEDIUM approvalRequired=true (total=41)"
+    },
+    {
+      "suite": "risk",
+      "name": "migration-plus-prod-deploy",
+      "ok": true,
+      "detail": "got band=HIGH approvalRequired=true (total=64)"
+    },
+    {
+      "suite": "risk",
+      "name": "small-safe-feature",
+      "ok": true,
+      "detail": "got band=LOW approvalRequired=false (total=8)"
+    },
+    {
+      "suite": "tool-selection",
+      "name": "Show me the failed CI jobs for PR 1842",
+      "ok": true,
+      "detail": "got get_checks"
+    },
+    {
+      "suite": "tool-selection",
+      "name": "Is this pull request safe to review?",
+      "ok": true,
+      "detail": "got get_pull_request"
+    },
+    {
+      "suite": "tool-selection",
+      "name": "What's the canary deployment health right now?",
+      "ok": true,
+      "detail": "got get_deployment"
+    },
+    {
+      "suite": "tool-selection",
+      "name": "Have we had any incidents on this service before?",
+      "ok": true,
+      "detail": "got get_incident_history"
+    },
+    {
+      "suite": "policy",
+      "name": "forbidden-path-touched",
+      "ok": true,
+      "detail": "got approvalRequired=true violations=[\"change touches a path requiring explicit review (forbidden_paths)\"]"
+    },
+    {
+      "suite": "policy",
+      "name": "too-many-files-changed",
+      "ok": true,
+      "detail": "got approvalRequired=true violations=[\"changed files (140) exceed max_changed_files (100)\"]"
+    },
+    {
+      "suite": "policy",
+      "name": "missing-required-check",
+      "ok": true,
+      "detail": "got approvalRequired=true violations=[\"required checks not passing: security-scan\"]"
+    },
+    {
+      "suite": "policy",
+      "name": "clean-pr-no-violations",
+      "ok": true,
+      "detail": "got approvalRequired=false violations=[]"
+    },
+    {
+      "suite": "memory",
+      "name": "remember-then-recall canary fact",
+      "ok": true,
+      "detail": "got [{\"id\":\"ac770ae1-fb8f-4226-8277-f1c57b2aad3e\",\"service\":\"payment-service\",\"note\":\"uses canary deployment\",\"created_at\":1788943904952}]"
+    },
+    {
+      "suite": "memory",
+      "name": "recall does not leak across services",
+      "ok": true,
+      "detail": "got []"
+    },
+    {
+      "suite": "incident",
+      "name": "repeat-of-known-incident-requires-approval",
+      "ok": true,
+      "detail": "got confidence=90 approvalRequired=true hypothesis=\"Likely repeat of INC-EVAL: synthetic prior cause.\""
+    },
+    {
+      "suite": "incident",
+      "name": "no-match-low-confidence-no-approval",
+      "ok": true,
+      "detail": "got confidence=40 approvalRequired=false hypothesis=\"No strong match in engineering memory — needs manual triage.\""
+    },
+    {
+      "suite": "incident",
+      "name": "low-criticality-service-never-requires-approval-even-at-high-confidence",
+      "ok": true,
+      "detail": "got confidence=95 approvalRequired=false hypothesis=\"Likely repeat of INC-EVAL: synthetic prior cause. GitOps shows deployment_ahead for notifications-service.\""
+    },
+    {
+      "suite": "incident",
+      "name": "deployment-drift-alone-raises-confidence",
+      "ok": true,
+      "detail": "got confidence=55 approvalRequired=false hypothesis=\"Deployment drift detected (reconciliation_failed) — likely cause. GitOps shows reconciliation_failed for identity-service.\""
+    },
+    {
+      "suite": "remediation",
+      "name": "failing-check-produces-a-fix-step",
+      "ok": true,
+      "detail": "got plan=[\"Fix and re-run \\\"integration-tests\\\" (timeout)\",\"Deploy via canary and monitor error rate before full rollout\"]"
+    },
+    {
+      "suite": "remediation",
+      "name": "migration-produces-a-separate-deploy-step",
+      "ok": true,
+      "detail": "got plan=[\"Deploy the migration separately from the application change, ahead of the release\",\"Deploy via canary and monitor error rate before full rollout\"]"
+    },
+    {
+      "suite": "remediation",
+      "name": "approval-required-produces-an-approval-step",
+      "ok": true,
+      "detail": "got plan=[\"Request production approval before promoting past canary\",\"Deploy via canary and monitor error rate before full rollout\"]"
+    },
+    {
+      "suite": "remediation",
+      "name": "clean-pr-always-still-recommends-canary",
+      "ok": true,
+      "detail": "got plan=[\"Deploy via canary and monitor error rate before full rollout\"]"
+    },
+    {
+      "suite": "regression",
+      "name": "pr-1842-matches-baseline",
+      "ok": true,
+      "detail": "got total=64 band=HIGH approvalRequired=true"
+    }
+  ]
+}

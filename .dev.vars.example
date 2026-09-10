@@ -1,0 +1,29 @@
+# Copy to .dev.vars for local development. None of these are required to
+# run the core demo (risk/policy/workflows/memory/MCP server all work with
+# no vars set) — they only unlock specific optional pieces.
+
+# MODEL_PROVIDER defaults to "workers-ai" (set in wrangler.jsonc `vars`) and
+# needs `wrangler login` / a Cloudflare account, not a key here. Set it here
+# instead — `.dev.vars` overrides wrangler.jsonc's `vars` for local dev, no
+# editing wrangler.jsonc needed — to use a different provider:
+#
+# MODEL_PROVIDER=openai / anthropic — implemented against each provider's
+# documented contract but untested in this repo's own development
+# environment (no API key was available to test with). See
+# docs/decisions/ADR-006-model-providers.md.
+# OPENAI_API_KEY=sk-...
+# ANTHROPIC_API_KEY=sk-ant-...
+#
+# MODEL_PROVIDER=groq — an OpenAI-compatible REST API, verified end-to-end
+# against a real key (see docs/decisions/ADR-019-groq-provider.md). Uses
+# openai/gpt-oss-120b (Groq's own recommended replacement for the now
+# Groq-deprecated llama-3.3-70b-versatile — Workers AI's own Llama 3.3
+# above is unaffected, the deprecation is Groq-side only).
+# MODEL_PROVIDER=groq
+# GROQ_API_KEY=gsk_...
+
+# Only needed for mcp/cloudflare.ts (account/worker/zone lookups against the
+# real Cloudflare API) — not wired into the default chat path. Also
+# untested here for the same reason.
+# CLOUDFLARE_API_TOKEN=...
+# CLOUDFLARE_ACCOUNT_ID=...

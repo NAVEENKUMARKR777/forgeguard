@@ -1,0 +1,47 @@
+{
+  "name": "forgeguard",
+  "version": "0.1.0",
+  "description": "AI-native release and incident commander built on Cloudflare Workers, Agents, Workflows and Workers AI",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "npm run cf-typegen && npm run build:dashboard && npm run db:migrate:local && concurrently -n worker,dashboard -c blue,magenta \"wrangler dev --local\" \"vite dev --config apps/dashboard/vite.config.ts\"",
+    "dev:worker-only": "npm run cf-typegen && npm run build:dashboard && npm run db:migrate:local && wrangler dev --local",
+    "db:migrate:local": "wrangler d1 migrations apply forgeguard-eval-history --local",
+    "build:dashboard": "vite build --config apps/dashboard/vite.config.ts",
+    "predeploy": "npm run build:dashboard",
+    "deploy": "wrangler deploy",
+    "cf-typegen": "wrangler types",
+    "typecheck": "npm run cf-typegen && tsc --noEmit && tsc -p tsconfig.node.json --noEmit && tsc -p apps/dashboard/tsconfig.json --noEmit",
+    "test": "vitest run",
+    "test:e2e": "playwright test",
+    "evals": "tsx evals/run.ts",
+    "evals:record": "node scripts/record-eval-run.mjs",
+    "verify:mcp": "npm run build:dashboard && node scripts/verify-mcp-server.mjs"
+  },
+  "dependencies": {
+    "@cloudflare/codemode": "^0.5.1",
+    "@modelcontextprotocol/server": "^2.0.0",
+    "agents": "^0.22.0",
+    "react": "^19.2.8",
+    "react-dom": "^19.2.8",
+    "react-router-dom": "^7.18.3",
+    "yaml": "^2.9.0",
+    "zod": "^4.5.4"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.63.0",
+    "@tailwindcss/vite": "^4.3.3",
+    "@types/node": "^26.5.0",
+    "@types/react": "^19.2.18",
+    "@types/react-dom": "^19.2.7",
+    "@vitejs/plugin-react": "^6.1.1",
+    "concurrently": "^10.0.5",
+    "tailwindcss": "^4.3.3",
+    "tsx": "^4.23.13",
+    "typescript": "^7.0.2",
+    "vite": "^8.2.2",
+    "vitest": "^5.0.0",
+    "wrangler": "^4.130.0"
+  }
+}

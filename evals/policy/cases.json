@@ -1,0 +1,81 @@
+[
+  {
+    "name": "forbidden-path-touched",
+    "pr": {
+      "number": 9101,
+      "title": "Rotate signing keys",
+      "service": "identity-service",
+      "author": "s.kim",
+      "files_changed": 3,
+      "diff_summary": [{ "path": "auth/keys/signing.ts", "additions": 10, "deletions": 2 }],
+      "checks": [
+        { "name": "unit-tests", "status": "passed" },
+        { "name": "integration-tests", "status": "passed" },
+        { "name": "security-scan", "status": "passed" }
+      ],
+      "test_coverage_delta": 0,
+      "touches_production_config": false,
+      "touches_database_migration": false
+    },
+    "expected": { "approvalRequired": true, "hasViolation": true }
+  },
+  {
+    "name": "too-many-files-changed",
+    "pr": {
+      "number": 9102,
+      "title": "Repo-wide lint fix",
+      "service": "checkout-service",
+      "author": "bot",
+      "files_changed": 140,
+      "diff_summary": [],
+      "checks": [
+        { "name": "unit-tests", "status": "passed" },
+        { "name": "integration-tests", "status": "passed" },
+        { "name": "security-scan", "status": "passed" }
+      ],
+      "test_coverage_delta": 0,
+      "touches_production_config": false,
+      "touches_database_migration": false
+    },
+    "expected": { "approvalRequired": true, "hasViolation": true }
+  },
+  {
+    "name": "missing-required-check",
+    "pr": {
+      "number": 9103,
+      "title": "Skip security scan for hotfix",
+      "service": "checkout-service",
+      "author": "on-call",
+      "files_changed": 4,
+      "diff_summary": [],
+      "checks": [
+        { "name": "unit-tests", "status": "passed" },
+        { "name": "integration-tests", "status": "passed" }
+      ],
+      "test_coverage_delta": 0,
+      "touches_production_config": false,
+      "touches_database_migration": false
+    },
+    "expected": { "approvalRequired": true, "hasViolation": true }
+  },
+  {
+    "name": "clean-pr-no-violations",
+    "pr": {
+      "number": 9104,
+      "title": "Add a log line",
+      "service": "checkout-service",
+      "author": "a.dev",
+      "files_changed": 1,
+      "diff_summary": [{ "path": "src/checkout.ts", "additions": 1, "deletions": 0 }],
+      "checks": [
+        { "name": "unit-tests", "status": "passed" },
+        { "name": "integration-tests", "status": "passed" },
+        { "name": "security-scan", "status": "passed" }
+      ],
+      "test_coverage_delta": 0,
+      "touches_production_config": false,
+      "touches_database_migration": false
+    },
+    "expected": { "approvalRequired": false, "hasViolation": false }
+  }
+]

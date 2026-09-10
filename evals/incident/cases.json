@@ -1,0 +1,42 @@
+[
+  {
+    "name": "repeat-of-known-incident-requires-approval",
+    "service": "payment-service",
+    "symptom": "connection pool exhaustion again",
+    "criticality": "high",
+    "hasPriorIncident": true,
+    "matchesFailureMode": true,
+    "driftStatus": "in_sync",
+    "expected": { "approvalRequired": true, "minConfidence": 85 }
+  },
+  {
+    "name": "no-match-low-confidence-no-approval",
+    "service": "checkout-service",
+    "symptom": "customers report a slow checkout page",
+    "criticality": "medium",
+    "hasPriorIncident": false,
+    "matchesFailureMode": false,
+    "driftStatus": "in_sync",
+    "expected": { "approvalRequired": false, "maxConfidence": 40 }
+  },
+  {
+    "name": "low-criticality-service-never-requires-approval-even-at-high-confidence",
+    "service": "notifications-service",
+    "symptom": "connection pool exhaustion",
+    "criticality": "low",
+    "hasPriorIncident": true,
+    "matchesFailureMode": true,
+    "driftStatus": "deployment_ahead",
+    "expected": { "approvalRequired": false, "minConfidence": 85 }
+  },
+  {
+    "name": "deployment-drift-alone-raises-confidence",
+    "service": "identity-service",
+    "symptom": "users seeing login failures",
+    "criticality": "high",
+    "hasPriorIncident": false,
+    "matchesFailureMode": false,
+    "driftStatus": "reconciliation_failed",
+    "expected": { "approvalRequired": false, "minConfidence": 50, "maxConfidence": 60 }
+  }
+]

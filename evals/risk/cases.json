@@ -1,0 +1,89 @@
+[
+  {
+    "name": "docs-only-change",
+    "pr": {
+      "number": 9001,
+      "title": "Update README",
+      "service": "docs-site",
+      "author": "a.chen",
+      "files_changed": 2,
+      "diff_summary": [{ "path": "README.md", "additions": 10, "deletions": 2 }],
+      "checks": [
+        { "name": "unit-tests", "status": "passed" },
+        { "name": "integration-tests", "status": "passed" },
+        { "name": "security-scan", "status": "passed" }
+      ],
+      "test_coverage_delta": 0,
+      "touches_production_config": false,
+      "touches_database_migration": false
+    },
+    "incidentCount": 0,
+    "expected": { "band": "LOW", "approvalRequired": false }
+  },
+  {
+    "name": "auth-change-with-failing-tests",
+    "pr": {
+      "number": 9002,
+      "title": "Refactor auth middleware",
+      "service": "identity-service",
+      "author": "b.singh",
+      "files_changed": 14,
+      "diff_summary": [{ "path": "src/auth/middleware.ts", "additions": 80, "deletions": 40 }],
+      "checks": [
+        { "name": "unit-tests", "status": "passed" },
+        { "name": "integration-tests", "status": "failed", "detail": "auth_token_test failed" },
+        { "name": "security-scan", "status": "passed" }
+      ],
+      "test_coverage_delta": -6,
+      "touches_production_config": true,
+      "touches_database_migration": false
+    },
+    "incidentCount": 0,
+    "expected": { "band": "MEDIUM", "approvalRequired": true }
+  },
+  {
+    "name": "migration-plus-prod-deploy",
+    "pr": {
+      "number": 9003,
+      "title": "Add settlement lock migration",
+      "service": "payment-service",
+      "author": "j.rivera",
+      "files_changed": 37,
+      "diff_summary": [
+        { "path": "src/db/migrations/0043_lock.sql", "additions": 20, "deletions": 0 },
+        { "path": "infrastructure/production/payment-service.yaml", "additions": 6, "deletions": 2 }
+      ],
+      "checks": [
+        { "name": "unit-tests", "status": "passed" },
+        { "name": "integration-tests", "status": "failed", "detail": "timeout" },
+        { "name": "security-scan", "status": "passed" }
+      ],
+      "test_coverage_delta": -4.2,
+      "touches_production_config": true,
+      "touches_database_migration": true
+    },
+    "incidentCount": 1,
+    "expected": { "band": "HIGH", "approvalRequired": true }
+  },
+  {
+    "name": "small-safe-feature",
+    "pr": {
+      "number": 9004,
+      "title": "Add optional query parameter",
+      "service": "checkout-service",
+      "author": "k.oliveira",
+      "files_changed": 5,
+      "diff_summary": [{ "path": "src/api/checkout.ts", "additions": 25, "deletions": 3 }],
+      "checks": [
+        { "name": "unit-tests", "status": "passed" },
+        { "name": "integration-tests", "status": "passed" },
+        { "name": "security-scan", "status": "passed" }
+      ],
+      "test_coverage_delta": 1.5,
+      "touches_production_config": false,
+      "touches_database_migration": false
+    },
+    "incidentCount": 0,
+    "expected": { "band": "LOW", "approvalRequired": false }
+  }
+]

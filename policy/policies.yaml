@@ -1,0 +1,19 @@
+# Policy-as-code: read by policy/engine.ts. Editing this file changes
+# deployment behavior without touching agent or model code.
+policies:
+  production:
+    max_changed_files: 100
+    required_checks:
+      - unit-tests
+      - integration-tests
+      - security-scan
+    forbidden_paths:
+      - infrastructure/production/*
+      - auth/*
+      - secrets/*
+    approval:
+      required_if_risk_at_least: 60
+      required_if_database_migration: true
+      required_if_security_change: true
+    deployment:
+      require_healthy_canary: true

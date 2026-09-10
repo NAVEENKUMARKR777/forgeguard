@@ -1,0 +1,15 @@
+{
+  "service": "payment-service",
+  "pipeline_id": "pl-8821",
+  "pr": 1842,
+  "jobs": [
+    { "name": "unit-tests", "status": "passed", "duration_s": 42 },
+    { "name": "integration-tests", "status": "failed", "duration_s": 311, "failure": "settlement_lock_migration_test timed out" },
+    { "name": "security-scan", "status": "passed", "duration_s": 55 }
+  ],
+  "deployment": {
+    "environment": "production",
+    "strategy": "canary",
+    "health": "unknown"
+  }
+}
