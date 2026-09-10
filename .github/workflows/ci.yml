@@ -45,6 +45,7 @@ jobs:
         with:
           node-version: 22
       - run: npm ci
+      - run: npm run build:dashboard
       - run: npx wrangler deploy --message "$(git rev-parse HEAD)"
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
@@ -63,4 +64,8 @@ jobs:
           node-version: 22
       - run: npm ci
       - run: npx playwright install --with-deps chromium
+      # This suite exercises real PR analysis (see release.spec.ts/
+      # incident.spec.ts), so `wrangler dev` needs a real token — same
+      # repo-scoped one the verify job uses.
+      - run: echo "GITHUB_TOKEN=${{ secrets.GITHUB_TOKEN }}" > .dev.vars
       - run: npm run test:e2e

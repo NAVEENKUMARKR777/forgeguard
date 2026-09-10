@@ -20,9 +20,9 @@ test("productivity: renders real metrics for this repo, labeled as live", async 
   page.on("pageerror", (err) => errors.push(err.message));
 
   await page.goto("/productivity");
-  await expect(page.locator("text=Development")).toBeVisible({ timeout: 10_000 });
-  await expect(page.locator("text=CI/CD")).toBeVisible();
-  await expect(page.locator("text=Reliability")).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Development" })).toBeVisible({ timeout: 10_000 });
+  await expect(page.getByRole("heading", { name: "CI/CD" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Reliability" })).toBeVisible();
 
   // The honesty label from productivity/metrics.ts's source: "live" must be
   // visible, not just present in a data attribute — this is the exact
