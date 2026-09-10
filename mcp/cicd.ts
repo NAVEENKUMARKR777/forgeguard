@@ -33,7 +33,13 @@ async function githubGet<T>(env: Env, path: string): Promise<T | null> {
   return (await res.json()) as T;
 }
 
-function mapJob(job: GhJob): PipelineJob {
+/** Returns null for a job with no real pass/fail signal (skipped —
+ * e.g. a deploy job conditioned on push-to-main, not a PR — or neutral)
+ * rather than misreporting it as failed or passed. */
+function mapJob(job: GhJob): PipelineJob | null {
+  if (job.status === "completed" && (job.conclusion === "skipped" || job.conclusion === "neutral")) {
+    return null;
+  }
   const status = job.status !== "completed" ? "pending" : job.conclusion === "success" ? "passed" : "failed";
   const startedMs = new Date(job.started_at).getTime();
   const endedMs = job.completed_at ? new Date(job.completed_at).getTime() : Date.now();
@@ -67,7 +73,7 @@ export async function getPipeline(env: Env, prNumber: number): Promise<Pipeline 
   const jobLists = await Promise.all(
     workflowRuns.map((run) => githubGet<{ jobs: GhJob[] }>(env, `/repos/${repo}/actions/runs/${run.id}/jobs`))
   );
-  const jobs = jobLists.flatMap((list) => list?.jobs.map(mapJob) ?? []);
+  const jobs = jobLists.flatMap((list) => list?.jobs.map(mapJob) ?? []).filter((j): j is PipelineJob => j !== null);
 
   const anyFailed = jobs.some((j) => j.status === "failed");
   const anyPending = jobs.some((j) => j.status === "pending");

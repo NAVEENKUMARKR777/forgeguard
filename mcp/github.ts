@@ -65,7 +65,15 @@ async function githubGet<T>(env: Env, path: string): Promise<T | null> {
   return (await res.json()) as T;
 }
 
-function mapCheckRun(run: GhCheckRun): PullRequestCheck {
+/** Returns null for a check-run that carries no real pass/fail signal —
+ * "skipped" (e.g. a deploy job intentionally conditioned on push-to-main,
+ * not PR events) and "neutral" aren't failures, but treating them as
+ * "passed" would be just as misleading, so they're excluded from the PR's
+ * checks entirely rather than misreported either direction. */
+function mapCheckRun(run: GhCheckRun): PullRequestCheck | null {
+  if (run.status === "completed" && (run.conclusion === "skipped" || run.conclusion === "neutral")) {
+    return null;
+  }
   const status = run.status !== "completed" ? "pending" : run.conclusion === "success" ? "passed" : "failed";
   return { name: run.name, status, detail: status === "failed" ? (run.conclusion ?? undefined) : undefined };
 }
@@ -136,7 +144,9 @@ export async function getPullRequest(env: Env, number: number): Promise<PullRequ
     headSha: pr.head.sha,
     files_changed: pr.changed_files ?? fileList.length,
     diff_summary,
-    checks: latestPerName(checkRunsRes?.check_runs ?? []).map(mapCheckRun),
+    checks: latestPerName(checkRunsRes?.check_runs ?? [])
+      .map(mapCheckRun)
+      .filter((c): c is PullRequestCheck => c !== null),
     test_coverage_delta: 0,
     touches_production_config: fileList.some((f) => /production/i.test(f.filename)),
     touches_database_migration: fileList.some((f) => /migrations?\//i.test(f.filename)),
