@@ -1,4 +1,4 @@
-import { getPullRequest, getService } from "../mcp/github";
+import { getService, resolvePullRequest } from "../mcp/github";
 import { getPipeline } from "../mcp/cicd";
 import { assessRisk, type RiskAssessment } from "../risk/engine";
 import { evaluatePolicy, type PolicyDecision } from "../policy/engine";
@@ -42,7 +42,7 @@ async function gatherEvidence(
 
   // Direct-call fallback — always available, used whenever Code Mode isn't
   // configured/reachable. See agents/codemode-investigate.ts.
-  const pr = getPullRequest(prNumber);
+  const pr = await resolvePullRequest(env, prNumber);
   if (!pr) return null;
   const service = getService(pr.service);
   const pipeline = getPipeline(prNumber);
@@ -55,7 +55,7 @@ export async function analyzeRelease(ctx: AgentContext, prNumber: number): Promi
   const evidence = await gatherEvidence(ctx.env, prNumber);
   if (!evidence) {
     ctx.emitStep("fetch-evidence", "error");
-    ctx.send(`I don't have any record of PR #${prNumber} in the fixture set.`);
+    ctx.send(`I couldn't find PR #${prNumber} — not in the fixture set, and no live GitHub match either.`);
     return;
   }
   const { pr, service, pipeline, incidents } = evidence;
@@ -111,13 +111,13 @@ export function explainAssessment(ctx: AgentContext): void {
   );
 }
 
-export function proposeRemediation(ctx: AgentContext): void {
+export async function proposeRemediation(ctx: AgentContext): Promise<void> {
   const investigation = ctx.getState().activeInvestigation;
   if (!investigation) {
     ctx.send("I haven't analyzed a PR yet in this session — ask me to analyze one first.");
     return;
   }
-  const pr = getPullRequest(investigation.prNumber);
+  const pr = await resolvePullRequest(ctx.env, investigation.prNumber);
   const steps = buildRemediationPlan(pr, investigation.policy);
   ctx.send(`Recommended remediation for PR #${investigation.prNumber}:\n${steps.map((s, i) => `${i + 1}. ${s}`).join("\n")}`);
 }
@@ -226,7 +226,7 @@ async function maybeStartRemediation(ctx: AgentContext, releaseInstanceId: strin
   if (!investigation || !result?.prNumber) return;
   if (result.outcome === "rejected" || result.outcome === "policy_violation") return;
 
-  const pr = getPullRequest(investigation.prNumber);
+  const pr = await resolvePullRequest(ctx.env, investigation.prNumber);
   if (!pr) return;
   const { instance, reused } = await createIdempotent(ctx.env.REMEDIATION_WORKFLOW, `remediation-${investigation.prNumber}`, {
     prNumber: investigation.prNumber,

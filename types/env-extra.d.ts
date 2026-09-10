@@ -17,4 +17,5 @@ interface Env {
   GROQ_API_KEY: string;
   CLOUDFLARE_API_TOKEN: string;
   CLOUDFLARE_ACCOUNT_ID: string;
+  GITHUB_TOKEN: string;
 }

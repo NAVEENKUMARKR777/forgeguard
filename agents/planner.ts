@@ -26,7 +26,7 @@ export async function plan(ctx: AgentContext, text: string): Promise<void> {
         releaseAgent.explainAssessment(ctx);
         break;
       case "remediate":
-        releaseAgent.proposeRemediation(ctx);
+        await releaseAgent.proposeRemediation(ctx);
         break;
       case "start_workflow":
         await releaseAgent.startWorkflow(ctx);

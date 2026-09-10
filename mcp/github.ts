@@ -1,5 +1,6 @@
 import pr1842 from "../fixtures/pull-requests/pr-1842.json";
 import paymentService from "../fixtures/services/payment-service.json";
+import { fetchLivePullRequest } from "./github-live";
 import type { CommitEntry, DiffEntry, PullRequest, ReviewEntry, ServiceMeta } from "./types";
 
 /**
@@ -19,6 +20,16 @@ const SERVICES: Record<string, ServiceMeta> = {
 
 export function getPullRequest(number: number): PullRequest | null {
   return PULL_REQUESTS[number] ?? null;
+}
+
+/**
+ * Fixture first, real GitHub API second. Keeps the demo PR (#1842)
+ * instant and deterministic while letting any other PR number resolve
+ * against the real repo when `GITHUB_TOKEN` is configured — see
+ * mcp/github-live.ts and ADR-002.
+ */
+export async function resolvePullRequest(env: Env, number: number): Promise<PullRequest | null> {
+  return getPullRequest(number) ?? fetchLivePullRequest(env, number);
 }
 
 export function getService(id: string): ServiceMeta | null {

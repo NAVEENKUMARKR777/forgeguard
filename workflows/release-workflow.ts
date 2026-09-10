@@ -1,5 +1,5 @@
 import { WorkflowEntrypoint, type WorkflowEvent, type WorkflowStep } from "cloudflare:workers";
-import { getPullRequest, getService } from "../mcp/github";
+import { getService, resolvePullRequest } from "../mcp/github";
 import { getPipeline } from "../mcp/cicd";
 import { assessRisk } from "../risk/engine";
 import { evaluatePolicy } from "../policy/engine";
@@ -34,9 +34,9 @@ export class ReleaseWorkflow extends WorkflowEntrypoint<Env, ReleaseWorkflowPara
     const { prNumber } = event.payload;
 
     const evidence = await step.do("gather-evidence", async () => {
-      const pr = getPullRequest(prNumber);
+      const pr = await resolvePullRequest(this.env, prNumber);
       if (!pr) {
-        throw new Error(`No fixture data for PR #${prNumber}`);
+        throw new Error(`No data for PR #${prNumber} — not in the fixture set, and no live GitHub match either`);
       }
       const service = getService(pr.service);
       const pipeline = getPipeline(prNumber);

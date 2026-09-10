@@ -1,7 +1,7 @@
 import { McpServer } from "@modelcontextprotocol/server";
 import { createMcpHandler } from "agents/mcp/server";
 import { z } from "zod";
-import { getPullRequest, getService, getPullRequestFiles, getReviews, getCommits, getDiff, searchCode } from "./github";
+import { getService, resolvePullRequest, searchCode } from "./github";
 import { getPipeline } from "./cicd";
 import { engineeringMemoryStub } from "../durable-objects/engineering-memory";
 import { withObservability } from "../observability/logger";
@@ -32,7 +32,7 @@ function buildServer(env: Env): McpServer {
       inputSchema: { number: z.number().int().describe("Pull request number, e.g. 1842") }
     },
     traced("get_pull_request", async ({ number }) => {
-      const pr = getPullRequest(number);
+      const pr = await resolvePullRequest(env, number);
       if (!pr) {
         return { content: [{ type: "text", text: `No pull request #${number} on record.` }], isError: true };
       }
@@ -64,11 +64,11 @@ function buildServer(env: Env): McpServer {
       inputSchema: { number: z.number().int() }
     },
     traced("get_pull_request_files", async ({ number }) => {
-      const files = getPullRequestFiles(number);
-      if (!files) {
+      const pr = await resolvePullRequest(env, number);
+      if (!pr) {
         return { content: [{ type: "text", text: `No pull request #${number} on record.` }], isError: true };
       }
-      return { content: [{ type: "text", text: JSON.stringify(files, null, 2) }] };
+      return { content: [{ type: "text", text: JSON.stringify(pr.diff_summary, null, 2) }] };
     })
   );
 
@@ -80,11 +80,11 @@ function buildServer(env: Env): McpServer {
       inputSchema: { number: z.number().int() }
     },
     traced("get_reviews", async ({ number }) => {
-      const reviews = getReviews(number);
-      if (reviews === null) {
+      const pr = await resolvePullRequest(env, number);
+      if (!pr) {
         return { content: [{ type: "text", text: `No pull request #${number} on record.` }], isError: true };
       }
-      return { content: [{ type: "text", text: JSON.stringify(reviews, null, 2) }] };
+      return { content: [{ type: "text", text: JSON.stringify(pr.reviews ?? [], null, 2) }] };
     })
   );
 
@@ -96,11 +96,11 @@ function buildServer(env: Env): McpServer {
       inputSchema: { number: z.number().int() }
     },
     traced("get_commits", async ({ number }) => {
-      const commits = getCommits(number);
-      if (commits === null) {
+      const pr = await resolvePullRequest(env, number);
+      if (!pr) {
         return { content: [{ type: "text", text: `No pull request #${number} on record.` }], isError: true };
       }
-      return { content: [{ type: "text", text: JSON.stringify(commits, null, 2) }] };
+      return { content: [{ type: "text", text: JSON.stringify(pr.commits ?? [], null, 2) }] };
     })
   );
 
@@ -112,10 +112,11 @@ function buildServer(env: Env): McpServer {
       inputSchema: { number: z.number().int() }
     },
     traced("get_diff", async ({ number }) => {
-      const diff = getDiff(number);
-      if (diff === null) {
+      const pr = await resolvePullRequest(env, number);
+      if (!pr) {
         return { content: [{ type: "text", text: `No pull request #${number} on record.` }], isError: true };
       }
+      const diff = pr.diff_text ?? pr.diff_summary.map((d) => `${d.path} (+${d.additions}/-${d.deletions})`).join("\n");
       return { content: [{ type: "text", text: diff }] };
     })
   );

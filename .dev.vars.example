@@ -27,3 +27,13 @@
 # untested here for the same reason.
 # CLOUDFLARE_API_TOKEN=...
 # CLOUDFLARE_ACCOUNT_ID=...
+
+# Optional live GitHub lookup (mcp/github.ts#resolvePullRequest /
+# mcp/github-live.ts). Without this, only the fixture PR (#1842) resolves.
+# With it, any other PR number is fetched from GITHUB_REPO's real GitHub
+# API — a fine-grained PAT scoped to just that repo's read-only Contents +
+# Pull requests permissions is enough; no write access is ever used.
+# GITHUB_TOKEN=ghp_...
+# GITHUB_REPO defaults to "NAVEENKUMARKR777/forgeguard" (set in
+# wrangler.jsonc `vars`) — override here to point at a different repo.
+# GITHUB_REPO=owner/repo
