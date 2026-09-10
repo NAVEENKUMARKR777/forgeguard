@@ -282,3 +282,5 @@ docs/                    architecture, demo script, threat model, evals, complet
 [`docs/evals.md`](docs/evals.md) ·
 [`docs/completion-status.md`](docs/completion-status.md) ·
 [`docs/decisions.md`](docs/decisions.md) (20 ADRs)
+
+<!-- test PR for verifying live GitHub PR fetch -->
