@@ -44,3 +44,20 @@ incident root-cause confidence.
   commit absent from the known sequence) always resolves to `"unknown"`
   rather than guessing a direction — this was a deliberate test case
   (`tests/gitops/drift.test.ts`), not an oversight.
+
+## Update
+
+The predicted live-GitHub swap happened: `gitops/state.ts` now computes
+`desiredCommit` from `master`'s real HEAD and `deployedCommit` from the
+real, currently-deployed Cloudflare Worker's version (its deployment
+message annotation, tagged with the git SHA at deploy time — see
+`mcp/cloudflare.ts` and `.github/workflows/ci.yml`'s deploy job), and
+ahead/behind comes from GitHub's real compare API instead of the synthetic
+`seq` ordinal — simpler than what it replaced, and exactly what this ADR
+said would happen with no changes needed in `detectDrift` or the risk
+component. There's also now only one real deployable thing (this Worker),
+so `GitOpsState` dropped its `service`/`environment` dimensions along with
+`healthStatus`, which turned out to have been unused even before this
+change. `tests/gitops/drift.test.ts` now constructs `GitOpsState` objects
+inline rather than pulling them from a fixture-backed lookup — same
+principle as the risk/policy evals in ADR-002.

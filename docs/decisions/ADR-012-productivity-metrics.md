@@ -45,3 +45,19 @@ with the React page at the same path.)
 - No live telemetry source exists or is implied — connecting one later
   means writing an alternative to `productivity/fixtures.ts` with the same
   `DailyMetricRow` shape; `aggregates.ts` and `metrics.ts` don't change.
+
+## Update
+
+That live source now exists: `productivity/fixtures.ts` (kept as the
+filename despite no longer generating fixtures — it's the same seam this
+ADR anticipated) builds real `DailyMetricRow`s from this repo's actual
+GitHub PR/Actions history and real incident memory, `bucketRows`/`sum`/
+`average` unchanged. `source: "live"` replaced `source: "fixture"` as the
+same load-bearing honesty label. Two categories of the old fixture had no
+real equivalent and were dropped rather than faked with permanent zeros:
+per-day "AI agent activity" counts (there's no cross-session audit
+aggregation to source them from — a real gap, not implemented here) and
+mean-time-to-detect/-recover (the incident schema only records `created_at`,
+not a resolution timestamp). `service` was also dropped from the shape —
+there's one real repo now, not four fictional ones — so the dashboard's
+service picker went with it.

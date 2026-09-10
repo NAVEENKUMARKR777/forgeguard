@@ -1,5 +1,5 @@
 {
-  "ranAt": "2026-09-10T13:28:38.336Z",
+  "ranAt": "2026-09-10T14:26:21.483Z",
   "passed": 22,
   "failed": 0,
   "results": [
@@ -79,7 +79,7 @@
       "suite": "memory",
       "name": "remember-then-recall canary fact",
       "ok": true,
-      "detail": "got [{\"id\":\"7b079e0b-cafe-42d4-8088-680c79320c7c\",\"service\":\"payment-service\",\"note\":\"uses canary deployment\",\"created_at\":1789046918336}]"
+      "detail": "got [{\"id\":\"ac25a95f-a50a-4378-8fd4-4d1fd01be127\",\"service\":\"payment-service\",\"note\":\"uses canary deployment\",\"created_at\":1789050381483}]"
     },
     {
       "suite": "memory",

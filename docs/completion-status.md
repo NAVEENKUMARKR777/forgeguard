@@ -87,21 +87,21 @@ only those other scripts, so the gap went undetected here. Fixed by adding
 | MCP server | `mcp/server.ts`, 9 real tools, real JSON-RPC | verify:mcp, tests/security/unauthorized-tool | ADR-005, ADR-011 | COMPLETE |
 | GitHub MCP (full tool surface) | 7 tools (PR, files, checks, reviews, commits, diff, search) | verify:mcp | ADR-011 | COMPLETE |
 | CI/CD MCP | pipeline/job/test-results/artifacts/deployment/health chain | — | ADR-011 | COMPLETE |
-| Cloudflare MCP | `mcp/cloudflare.ts`, real REST calls | — | ADR-005 | IMPLEMENTED — LIVE VERIFICATION REQUIRES CREDENTIALS |
+| Cloudflare MCP | `mcp/cloudflare.ts`, real REST calls, feeds real GitOps drift | — | ADR-005 | COMPLETE — verified live against real credentials |
 | Tool metadata registry (access/approval/risk) | `mcp/tool-metadata.ts` | tests/security/unauthorized-tool, tool-escalation | ADR-011 | COMPLETE |
 | Code Mode | `agents/codemode-investigate.ts`, verified live | tests/security/tool-escalation | ADR-007 | COMPLETE (scoped — see ADR-007 on the fuller runtime) |
-| GitOps drift detection | `gitops/` (state, drift) | tests/gitops (8 cases) | ADR-009 | COMPLETE |
+| GitOps drift detection | `gitops/` (state, drift) — real GitHub compare-API data vs. the real deployed Cloudflare Worker | tests/gitops (7 cases) | ADR-009 | COMPLETE |
 | Context engineering (ranking/budget/sources) | `context/{ranking,budget,sources,builder}.ts` | tests/context-engineering | — | COMPLETE |
-| Developer productivity metrics | `productivity/` (fixtures, aggregates, metrics, api) + React page | tests/productivity | ADR-012 | COMPLETE |
+| Developer productivity metrics | `productivity/` (real GitHub/CI/incident aggregation, `source: "live"`) + React page | tests/productivity | ADR-012 | COMPLETE |
 | Audit trail (structured, request-correlated) | `audit/` (types, recorder, queries) | tests/security/audit-redaction | ADR-010 | COMPLETE |
 | Idempotency / replay protection | `workflows/idempotent-create.ts` | tests/security/replay-idempotency | ADR-010 | COMPLETE |
 | Observability (structured events) | `observability/` (events, logger), wired into LLM/tool/context calls | verified live against wrangler dev | ADR-014 | COMPLETE |
 | Security suite | 10 test files covering injection, escalation, secrets, path traversal, approval bypass, replay, workflow auth, context poisoning | tests/security/ | docs/threat-model.md | COMPLETE |
-| Eval suites | 7 categories, 23 cases | evals/ | docs/evals.md | COMPLETE |
+| Eval suites | 6 categories, 22 cases | evals/ | docs/evals.md | COMPLETE |
 | Eval history/versioning | D1-backed run history, run-over-run comparison, rendered at `/evals` | tests/eval-comparison | ADR-015 | COMPLETE |
 | React dashboard (chat + evals + productivity) | 3 routes, verified live | tests/e2e/ (Playwright) | ADR-008 | COMPLETE |
 | Voice | Web Speech API | — | — | COMPLETE |
-| Synthetic infrastructure | One deep example for release/incident analysis (PR #1842, its payment-service CI pipeline, INC-1042 — `mcp/github.ts`'s service metadata covers payment-service only); GitOps state for all 4 known services (5 states — payment-service alone has both production and staging); an independent 90-day × 4-service productivity time series | — | — | COMPLETE |
+| Real single-repo infrastructure | No fixtures anywhere in this codebase — every PR/CI/GitOps/incident/productivity data point is this actual repo's real, live state | — | ADR-002, ADR-009 | COMPLETE |
 | CI/CD | typecheck, test, evals, verify:mcp (fast gate) + a separate test:e2e job | — | ci.yml, nightly-evals.yml | COMPLETE (no lint step — documented tooling gap, not silently skipped) |
 | Browser verification | `tests/e2e/*.spec.ts`, checked in, run via `npm run test:e2e` (chat, workflow/approval, incident, productivity, evals) | tests/e2e/ (Playwright) | ADR-016 | COMPLETE |
 | Documentation | README, architecture, threat-model, evals, decisions index, 20 ADRs, this file | — | — | COMPLETE |

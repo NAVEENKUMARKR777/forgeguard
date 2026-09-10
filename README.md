@@ -7,35 +7,51 @@ SDK, Workflows, Workers AI, Code Mode, and the Model Context Protocol.
 
 ## Try it now — no setup, no clone
 
-Open the link above and type these into the chat, in order:
+Everything below is against real data on this actual repo — no fixtures,
+no simulated steps. Open the link above; the sidebar polls the real list
+of open pull requests on this repo (~15s refresh). If one's open, click
+it, or type a prompt naming any real PR number:
 
-1. `Is PR #1842 safe to deploy?` — real risk scoring (64/100, HIGH) and a
-   plain-language explanation, from a live Llama 3.3 call on Workers AI.
+1. `Is PR #N safe to deploy?` — real risk scoring and a plain-language
+   explanation, from a live Llama 3.3 call on Workers AI, over that PR's
+   actual GitHub data (files, checks, reviews) and real GitOps drift
+   (this repo's deployed commit vs. `master`'s HEAD, via the Cloudflare
+   API).
 2. `Why is it risky?` — the scored breakdown behind that number.
 3. `What should I fix first?` — a concrete remediation plan built from the
    actual failing checks.
 4. `Start the remediation workflow` — starts a real Cloudflare Workflow
-   instance; since this PR needs approval, it parks on `waitForEvent` and
-   the dashboard's Approve/Reject buttons light up. Click Approve to watch
-   it resume and roll out.
-5. `Investigate the payment-service incident` — pulls a real prior incident
-   out of shared Durable Object memory, the same one PR #1842's risk score
-   already factored in.
+   instance; if policy requires approval, it parks on `waitForEvent` and
+   the dashboard's Approve/Reject buttons light up. Once approved, the
+   workflow polls real CI on that PR to completion.
+5. `Merge this pr` / `Close this pr` — once you're satisfied (or not),
+   decide for real: this calls GitHub's actual merge/close API for the
+   PR you just analyzed. There's no separate confirmation step — that's
+   deliberate, so a reviewer can go all the way through the loop.
+6. `Investigate the forgeguard incident` — pulls any real prior incident
+   out of shared Durable Object memory (empty until someone records one
+   through the chat — see [`docs/demo.md`](docs/demo.md)).
+
+No open PR right now? Open a small one on this repo yourself (even a
+one-line README edit) — it shows up in the sidebar within ~15 seconds.
 
 Two other pages on the same URL, no login: **[/evals](https://forgeguard.forgeguard.workers.dev/evals)**
-(23 deterministic risk/policy/memory/incident/remediation checks, rendered
+(22 deterministic risk/policy/memory/incident/remediation checks, rendered
 from a real recorded run — not hand-typed numbers) and
 **[/productivity](https://forgeguard.forgeguard.workers.dev/productivity)**
-(PR cycle time, CI reliability, MTTR).
+(PR cycle time, CI reliability, real incident frequency — computed from
+this repo's actual history, which for a young repo may be mostly zeros;
+that's honest, not a bug).
 
 For anyone who wants to check the MCP server directly, independent of the
-chat UI — this is a real JSON-RPC endpoint, not a mock:
+chat UI — this is a real JSON-RPC endpoint, not a mock (swap `1` for any
+real PR number):
 
 ```bash
 curl -sN https://forgeguard.forgeguard.workers.dev/mcp \
   -H 'Content-Type: application/json' \
   -H 'Accept: application/json, text/event-stream' \
-  -d '{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"get_pull_request","arguments":{"number":1842}}}'
+  -d '{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"get_pull_request","arguments":{"number":1}}}'
 ```
 
 The full guided tour, including the incident-workflow and voice-input
@@ -220,15 +236,20 @@ account at all. See [`ADR-019`](docs/decisions/ADR-019-groq-provider.md).
 Full table: [`docs/architecture.md`](docs/architecture.md#whats-real-vs-what-s-a-stand-in),
 and the requirement-by-requirement matrix:
 [`docs/completion-status.md`](docs/completion-status.md). Short version:
-the agent, shared memory, risk/policy/GitOps engines, all three workflows'
+there are no fixtures left in this codebase. GitHub PRs/reviews/commits/
+checks, GitHub Actions CI data, GitOps drift (against the real deployed
+Cloudflare Worker), the open-PR list, merge/close, and productivity
+metrics are all live — see
+[`ADR-002`](docs/decisions/ADR-002-mcp-vs-direct-tools.md) for how this
+module was fixture-backed early on and why that stopped being the right
+call once this was a real, live-deployed thing someone would click on.
+The agent, shared memory, risk/policy/GitOps engines, all three workflows'
 approval loops, the MCP server, Code Mode's sandboxed execution,
-observability, and the React dashboard are real and verified end-to-end —
-the dashboard specifically via a checked-in headless-browser suite
+observability, and the React dashboard are verified end-to-end — the
+dashboard specifically via a checked-in headless-browser suite
 (`npm run test:e2e`, Playwright) exercising the full analyze → workflow →
 approve → remediation cycle, the incident flow, and the evals/productivity
-pages, with zero console errors. GitHub/CI data is fixture-backed, not a
-live integration —
-[`ADR-002`](docs/decisions/ADR-002-mcp-vs-direct-tools.md).
+pages, with zero console errors.
 
 ## Repository layout
 
@@ -282,5 +303,3 @@ docs/                    architecture, demo script, threat model, evals, complet
 [`docs/evals.md`](docs/evals.md) ·
 [`docs/completion-status.md`](docs/completion-status.md) ·
 [`docs/decisions.md`](docs/decisions.md) (20 ADRs)
-
-<!-- test PR for verifying live GitHub PR fetch -->

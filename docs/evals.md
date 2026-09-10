@@ -8,9 +8,11 @@ eval actually running.
 
 ## Suites
 
-- **`evals/risk/`** — feeds a PR fixture into `assessRisk()`/`evaluatePolicy()`
-  and asserts the resulting band and approval decision. Four cases spanning
-  LOW through HIGH.
+- **`evals/risk/`** — feeds a fully inline, synthetic PR object (not this
+  repo's real GitHub data — see ADR-002 on why these stay fixture-free-but-
+  deterministic rather than hitting the live API) into
+  `assessRisk()`/`evaluatePolicy()` and asserts the resulting band and
+  approval decision. Four cases spanning LOW through HIGH.
 - **`evals/tool-selection/`** — asserts `selectTool()` (the deterministic
   keyword router in `mcp/registry.ts`) picks the tool a human would expect
   for a given question.
@@ -32,11 +34,12 @@ eval actually running.
   (`remediation/plan.ts`, extracted from `agents/release-agent.ts`): a
   failing check produces a named fix step, a migration produces a
   separate-deploy step, `approvalRequired` produces an approval step.
-- **`evals/regression/`** — locks the real PR #1842 fixture's risk score and
-  policy decision against a checked-in baseline
-  (`evals/regression/baseline.json`). A drift here means something in
-  `risk/engine.ts` or `policy/policies.yaml` changed behavior — sometimes
-  intentional, but it should never be silent.
+There used to be a seventh suite, `evals/regression/`, locking one
+fixture PR's exact risk score against a checked-in baseline. It's gone —
+once there was no fixture left to lock (see ADR-002), "did the score for
+PR #1842 change" stopped being a meaningful question. The `risk`/`policy`
+suites above already cover the same regression-guard purpose against
+inline, versioned inputs.
 
 ## Run history and comparison
 

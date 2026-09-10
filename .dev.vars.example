@@ -1,6 +1,17 @@
-# Copy to .dev.vars for local development. None of these are required to
-# run the core demo (risk/policy/workflows/memory/MCP server all work with
-# no vars set) — they only unlock specific optional pieces.
+# Copy to .dev.vars for local development.
+
+# GITHUB_TOKEN is required for almost everything: there are no fixtures
+# left in this codebase (see docs/decisions/ADR-002-mcp-vs-direct-tools.md)
+# — PR/CI/GitOps data, the open-PR list, and merge/close all call the real
+# GitHub API. Without it, those all degrade to null/empty/no-op rather
+# than throwing, but the demo has nothing real to show. A fine-grained PAT
+# scoped to just GITHUB_REPO with read-only Contents + Pull requests
+# covers everything except merge/close, which additionally need
+# Pull requests: Read and write.
+# GITHUB_TOKEN=ghp_...
+# GITHUB_REPO defaults to "NAVEENKUMARKR777/forgeguard" (set in
+# wrangler.jsonc `vars`) — override here to point at a different repo.
+# GITHUB_REPO=owner/repo
 
 # MODEL_PROVIDER defaults to "workers-ai" (set in wrangler.jsonc `vars`) and
 # needs `wrangler login` / a Cloudflare account, not a key here. Set it here
@@ -22,18 +33,11 @@
 # MODEL_PROVIDER=groq
 # GROQ_API_KEY=gsk_...
 
-# Only needed for mcp/cloudflare.ts (account/worker/zone lookups against the
-# real Cloudflare API) — not wired into the default chat path. Also
-# untested here for the same reason.
+# Needed for the real GitOps drift check (mcp/cloudflare.ts +
+# gitops/state.ts — compares the real deployed Worker version against
+# GITHUB_REPO's master HEAD). A token scoped to Account -> Workers
+# Scripts: Read is enough locally; CI's deploy job needs Edit to actually
+# deploy. Without these, GitOps drift degrades to "unknown" rather than
+# throwing.
 # CLOUDFLARE_API_TOKEN=...
 # CLOUDFLARE_ACCOUNT_ID=...
-
-# Optional live GitHub lookup (mcp/github.ts#resolvePullRequest /
-# mcp/github-live.ts). Without this, only the fixture PR (#1842) resolves.
-# With it, any other PR number is fetched from GITHUB_REPO's real GitHub
-# API — a fine-grained PAT scoped to just that repo's read-only Contents +
-# Pull requests permissions is enough; no write access is ever used.
-# GITHUB_TOKEN=ghp_...
-# GITHUB_REPO defaults to "NAVEENKUMARKR777/forgeguard" (set in
-# wrangler.jsonc `vars`) — override here to point at a different repo.
-# GITHUB_REPO=owner/repo

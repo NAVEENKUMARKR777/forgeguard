@@ -30,3 +30,20 @@ reproducible in `evals/tool-selection`.
 - This is explicitly not "production-ready GitHub integration" and the
   README says so — claiming otherwise would misrepresent what's actually
   wired up.
+
+## Update
+
+Once this became a real, live-deployed thing a reviewer would actually
+click on, "isn't reproducible from a clean clone" stopped outweighing
+"claims to investigate a real PR but only knows about one specific
+fixture." `mcp/github.ts` and `mcp/cicd.ts` are now the real GitHub/GitHub
+Actions client this ADR always said they'd become — exactly the swap
+predicted above, with no changes needed at the call sites. Determinism for
+evals didn't go away: `evals/risk`, `evals/policy`, `evals/tool-selection`,
+`evals/incident`, `evals/remediation`, and `evals/memory` all construct
+fully inline synthetic inputs (never touching the live API), so `npm run
+evals` stays fast, offline, and reproducible in CI. The one suite that
+wasn't inline — `evals/regression`, which locked PR #1842's fixture score
+specifically — was removed rather than pointed at a live PR, since a
+regression baseline against data that can change or disappear isn't a
+regression baseline.

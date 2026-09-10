@@ -85,7 +85,7 @@ new outbound message, not stored server-side). The risk gauge, per-component
 breakdown, policy card, live pipeline timeline, and approval controls are
 all driven directly off that state — nothing is duplicated or re-derived.
 
-## The pipeline for "Is PR #1842 safe to deploy?"
+## The pipeline for "Is PR #N safe to deploy?"
 
 1. `classifyIntent()` (`agents/intent.ts`) — deterministic keyword match,
    not an LLM call (ADR-002/ADR-003).
@@ -114,8 +114,10 @@ agent tracks this in `SessionState.pendingApproval` (not on the
 PR-specific `activeInvestigation`, since an incident report can also need
 approval without any PR having been analyzed). Saying "approve" calls
 `instance.sendEvent(...)`, which resumes the workflow; on completion,
-`release-agent.ts` automatically starts `RemediationWorkflow` to simulate
-the actual rollout.
+`release-agent.ts` automatically starts `RemediationWorkflow`, which polls
+the PR's real CI to completion. Merging or closing the PR for real is a
+separate, explicit action ("merge this pr" / "close this pr") — see
+`agents/release-agent.ts#mergePullRequest`/`closePullRequest`.
 
 ## What's real vs. what's a stand-in
 
@@ -128,7 +130,8 @@ the actual rollout.
 | Cloudflare Workflows (release, incident, remediation) with human approval | Real, verified end-to-end including `waitForEvent`/`sendEvent` |
 | Code Mode sandboxed investigation | Real, verified working in local dev (see ADR-007) |
 | GitOps drift detection | Real, deterministic (`gitops/`), 7th risk dimension (ADR-009) |
-| Developer productivity metrics | Real aggregation (`productivity/`) over generated, `source: "fixture"`-labeled data (ADR-012) |
+| Developer productivity metrics | Real aggregation (`productivity/`) over this repo's actual GitHub/CI/incident history, `source: "live"` (ADR-012) |
+| GitHub/CI/GitOps data | Real — no fixtures left in this codebase (ADR-002); the real deployed Cloudflare Worker's version feeds GitOps drift |
 | Audit trail | Real, request/session/workflow-correlated, auto-redacting (`audit/`, ADR-010) |
 | Observability | Real structured JSON events wired into LLM/tool/context calls (`observability/`, ADR-014) |
 | Eval run history / comparison | Real, D1-backed (`evals/history-api.ts`), not an in-memory array (ADR-015) |
