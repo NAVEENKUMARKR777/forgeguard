@@ -1,7 +1,7 @@
 const GITHUB_API = "https://api.github.com";
 
 function repoTarget(env: Env): string {
-  return env.GITHUB_REPO || "NAVEENKUMARKR777/forgeguard";
+  return env.GITHUB_REPO || "NAVEENKUMARKR777/forgeguard-demo";
 }
 
 async function githubRequest(env: Env, method: string, path: string, body?: unknown): Promise<Response> {

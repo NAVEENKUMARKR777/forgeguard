@@ -53,7 +53,7 @@ export async function investigateViaCodeMode(
     name: "tools",
     tools: {
       getPullRequest: { execute: async (prNumberArg: unknown) => getPullRequest(env, prNumberArg as number) },
-      getService: { execute: async (serviceId: unknown) => getService(serviceId as string) },
+      getService: { execute: async (serviceId: unknown) => getService(env, serviceId as string) },
       getPipeline: { execute: async (prNumberArg: unknown) => getPipeline(env, prNumberArg as number) },
       getIncidents: {
         execute: async (serviceId: unknown) => engineeringMemoryStub(env).getIncidentsForService(serviceId as string)

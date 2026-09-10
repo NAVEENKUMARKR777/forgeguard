@@ -11,7 +11,7 @@ const ACTIVE_SYMPTOM_PATTERN = /\b(500s|down|returning errors|failing|outage|deg
 async function guessService(ctx: AgentContext): Promise<string> {
   const investigation = ctx.getState().activeInvestigation;
   const pr = investigation ? await getPullRequest(ctx.env, investigation.prNumber) : null;
-  return pr?.service ?? "forgeguard";
+  return pr?.service ?? "forgeguard-demo";
 }
 
 /**
@@ -96,7 +96,7 @@ export async function pollIncidentWorkflow(
     // `reused: false` was a false negative from local dev's Workflows
     // simulator not enforcing unique instance ids (ADR-010) — this is an
     // already-resolved instance from earlier in the dev session.
-    const staleReuse = freshStart && service && getService(service)?.criticality === "high";
+    const staleReuse = freshStart && service && getService(ctx.env, service)?.criticality === "high";
     recordAuditEvent(ctx.sql, {
       requestId: ctx.requestId,
       sessionId: ctx.sessionId,
@@ -130,7 +130,7 @@ export async function pollIncidentWorkflow(
     // Same local-dev status gap as ReleaseWorkflow (see ADR-004): mirror the
     // workflow's own approval rule (high-criticality service) client-side
     // rather than waiting forever on a status string local dev may never report.
-    if (service && getService(service)?.criticality === "high") {
+    if (service && getService(ctx.env, service)?.criticality === "high") {
       markWaitingForRollbackApproval(ctx, instanceId);
     } else {
       ctx.send("Still investigating — check back shortly.");

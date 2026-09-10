@@ -32,18 +32,25 @@ interface GhPullRequest {
   updated_at: string;
 }
 
-const FORGEGUARD_SERVICE: ServiceMeta = {
-  id: "forgeguard",
-  owner: "NAVEENKUMARKR777",
-  criticality: "medium",
-  repository: "NAVEENKUMARKR777/forgeguard",
-  deployment_strategy: "direct",
-  common_failure_modes: ["Workers AI model unavailable", "D1 migration mismatch"],
-  previous_incidents: []
-};
-
 function repoTarget(env: Env): string {
-  return env.GITHUB_REPO || "NAVEENKUMARKR777/forgeguard";
+  return env.GITHUB_REPO || "NAVEENKUMARKR777/forgeguard-demo";
+}
+
+/** Static facts about the one real repo GITHUB_REPO points investigations
+ * at — not fixture demo data, just config about a real thing, derived
+ * from the same env var everything else here uses so it can never drift
+ * out of sync with what pr.service actually is. */
+function serviceMetaFor(env: Env): ServiceMeta {
+  const repo = repoTarget(env);
+  return {
+    id: repo.split("/")[1] ?? "unknown",
+    owner: repo.split("/")[0] ?? "unknown",
+    criticality: "medium",
+    repository: repo,
+    deployment_strategy: "direct",
+    common_failure_modes: ["D1 migration mismatch", "invalid request body"],
+    previous_incidents: []
+  };
 }
 
 async function githubGet<T>(env: Env, path: string): Promise<T | null> {
@@ -139,10 +146,12 @@ export async function getPullRequest(env: Env, number: number): Promise<PullRequ
 }
 
 /** The single real service this app describes — static facts about how
- * this actual repo is deployed, not fixture demo data. Returns null for
- * any other id, same "unknown service" semantics the old fixture map had. */
-export function getService(id: string): ServiceMeta | null {
-  return id === FORGEGUARD_SERVICE.id ? FORGEGUARD_SERVICE : null;
+ * the real GITHUB_REPO target is deployed, not fixture demo data. Returns
+ * null for any other id, same "unknown service" semantics the old fixture
+ * map had. */
+export function getService(env: Env, id: string): ServiceMeta | null {
+  const meta = serviceMetaFor(env);
+  return id === meta.id ? meta : null;
 }
 
 export async function getPullRequestFiles(env: Env, number: number): Promise<DiffEntry[] | null> {

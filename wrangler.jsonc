@@ -9,7 +9,15 @@
   },
   "vars": {
     "MODEL_PROVIDER": "workers-ai",
-    "GITHUB_REPO": "NAVEENKUMARKR777/forgeguard"
+    // The repo ForgeGuard investigates/analyzes/merges PRs against — a
+    // separate, safe demo target, deliberately not this repo (using
+    // ForgeGuard should never mean ForgeGuard changing its own source).
+    // See docs/decisions/ADR-021-demo-target-repo.md.
+    "GITHUB_REPO": "NAVEENKUMARKR777/forgeguard-demo",
+    // The repo actually deployed as this Worker — used only by
+    // gitops/state.ts to compare the real deployed commit against real
+    // git history. Always this repo, regardless of GITHUB_REPO above.
+    "DEPLOY_REPO": "NAVEENKUMARKR777/forgeguard"
   },
   "ai": {
     "binding": "AI"

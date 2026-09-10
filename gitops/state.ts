@@ -5,8 +5,12 @@ const GITHUB_API = "https://api.github.com";
 const WORKER_SCRIPT_NAME = "forgeguard";
 const DEFAULT_BRANCH = "master";
 
+/** Deliberately DEPLOY_REPO, not GITHUB_REPO: this module answers "is the
+ * deployed Worker in sync with git", which is inherently about ForgeGuard's
+ * own repo regardless of which repo GITHUB_REPO points investigations at —
+ * see docs/decisions/ADR-021-demo-target-repo.md. */
 function repoTarget(env: Env): string {
-  return env.GITHUB_REPO || "NAVEENKUMARKR777/forgeguard";
+  return env.DEPLOY_REPO || "NAVEENKUMARKR777/forgeguard";
 }
 
 async function githubGet<T>(env: Env, path: string): Promise<T | null> {

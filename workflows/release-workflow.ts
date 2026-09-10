@@ -38,7 +38,7 @@ export class ReleaseWorkflow extends WorkflowEntrypoint<Env, ReleaseWorkflowPara
       if (!pr) {
         throw new Error(`No data for PR #${prNumber} on ${this.env.GITHUB_REPO || "the configured repo"}`);
       }
-      const service = getService(pr.service);
+      const service = getService(this.env, pr.service);
       const pipeline = await getPipeline(this.env, prNumber);
       return { pr, service, pipeline };
     });

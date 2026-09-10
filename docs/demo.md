@@ -1,12 +1,15 @@
 # Demo script
 
 Requires `npm run dev`, a `GITHUB_TOKEN` in `.dev.vars` (see
-`.dev.vars.example` — needs no special scopes beyond reading the repo
-you point `GITHUB_REPO` at), and `wrangler login` or `--remote` for
-Workers AI (step 1's plain-language explanation). Everything reads/writes
-the real GitHub repo `GITHUB_REPO` names — no fixtures left in this
-codebase (see `ADR-002`). Steps 4/5 (merge/close) make a real GitHub API
-call: use a throwaway PR you don't mind actually merging or closing.
+`.dev.vars.example`), and `wrangler login` or `--remote` for Workers AI
+(step 1's plain-language explanation). Everything reads/writes the real
+GitHub repo `GITHUB_REPO` names — no fixtures left in this codebase (see
+`ADR-002`). `GITHUB_REPO` defaults to
+[`forgeguard-demo`](https://github.com/NAVEENKUMARKR777/forgeguard-demo),
+a separate, purpose-built repo so that using ForgeGuard never means
+ForgeGuard merging/closing PRs against its own source (see `ADR-021`) —
+steps 4/5 (merge/close) make a real GitHub API call there, so a throwaway
+PR you don't mind actually merging or closing is exactly what it's for.
 
 **If you've clicked through steps 3 before in this same dev session**
 (or restarted `npm run dev` without stopping the previous one), restart
@@ -56,21 +59,22 @@ sidebar shows it live, or reference it by number directly.
    even if you ask it to — see `tests/security/workflow-authorization.test.ts`
    for the same scoping rule already applied to approve/reject).
 
-5. **Incident memory.** Type `Investigate the forgeguard incident` —
+5. **Incident memory.** Type `Investigate the forgeguard-demo incident` —
    pulls any real prior incident out of the shared `EngineeringMemoryStore`
    (empty until step 6 records one).
 
-6. **Live incident.** Type `forgeguard is returning 500s, investigate`.
+6. **Live incident.** Type `forgeguard-demo is returning 500s, investigate`.
    Starts a real `IncidentWorkflow`: correlates the symptom against
    engineering memory and produces a confidence-scored root-cause
-   hypothesis. forgeguard is honestly medium-criticality (not the old
+   hypothesis. forgeguard-demo is honestly medium-criticality (not the old
    demo's fictional high-criticality payment-service), so this
    auto-resolves rather than pausing for rollback approval — the approval
    path still exists in the code (`incident/correlate.ts#rollbackRequiresApproval`)
    for a service that actually is high-criticality.
 
-7. **Teach it something.** Type `Remember that forgeguard uses direct
-   deployment`, then later ask `How should we deploy forgeguard?` — the
+7. **Teach it something.** Type `Remember that forgeguard-demo uses
+   direct deployment`, then later ask `How should we deploy
+   forgeguard-demo?` — the
    answer is grounded in what you just told it (`memory/engineering.ts`,
    verified via `evals/memory`).
 

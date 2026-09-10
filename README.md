@@ -4,19 +4,30 @@ AI release and incident commander, built on Cloudflare Workers, the Agents
 SDK, Workflows, Workers AI, Code Mode, and the Model Context Protocol.
 
 **Live deployment:** <https://forgeguard.forgeguard.workers.dev>
+**PR target repo:** <https://github.com/NAVEENKUMARKR777/forgeguard-demo>
 
 ## Try it now — no setup, no clone
 
-Everything below is against real data on this actual repo — no fixtures,
-no simulated steps. Open the link above; the sidebar polls the real list
-of open pull requests on this repo (~30s refresh). If one's open, click
-it, or type a prompt naming any real PR number:
+ForgeGuard can genuinely merge or close a pull request once you've walked
+it through analysis and approval — so it deliberately doesn't act on
+*this* repo. It acts on
+[`forgeguard-demo`](https://github.com/NAVEENKUMARKR777/forgeguard-demo),
+a small, real, separately-deployed Worker that exists specifically to be
+a safe place for that (see
+[`ADR-021`](docs/decisions/ADR-021-demo-target-repo.md)). Open a PR
+there, or use the one already open, then come back here:
+
+Everything below is real data, no fixtures, no simulated steps. Open the
+link above; the sidebar polls the real list of open pull requests on
+`forgeguard-demo` (~30s refresh). Click one, or type a prompt naming any
+real PR number:
 
 1. `Is PR #N safe to deploy?` — real risk scoring and a plain-language
    explanation, from a live Llama 3.3 call on Workers AI, over that PR's
    actual GitHub data (files, checks, reviews) and real GitOps drift
-   (this repo's deployed commit vs. `master`'s HEAD, via the Cloudflare
-   API).
+   (this Worker's deployed commit vs. this repo's `master` HEAD, via the
+   Cloudflare API — always about ForgeGuard's own deployment, regardless
+   of which repo PRs are analyzed on).
 2. `Why is it risky?` — the scored breakdown behind that number.
 3. `What should I fix first?` — a concrete remediation plan built from the
    actual failing checks.
@@ -25,23 +36,27 @@ it, or type a prompt naming any real PR number:
    the dashboard's Approve/Reject buttons light up. Once approved, the
    workflow polls real CI on that PR to completion.
 5. `Merge this pr` / `Close this pr` — once you're satisfied (or not),
-   decide for real: this calls GitHub's actual merge/close API for the
-   PR you just analyzed. There's no separate confirmation step — that's
-   deliberate, so a reviewer can go all the way through the loop.
-6. `Investigate the forgeguard incident` — pulls any real prior incident
-   out of shared Durable Object memory (empty until someone records one
-   through the chat — see [`docs/demo.md`](docs/demo.md)).
+   decide for real: this calls GitHub's actual merge/close API against
+   `forgeguard-demo` for the PR you just analyzed. There's no separate
+   confirmation step — that's deliberate, so a reviewer can go all the
+   way through the loop, including watching the merge actually land on
+   [`forgeguard-demo`](https://github.com/NAVEENKUMARKR777/forgeguard-demo).
+6. `Investigate the forgeguard-demo incident` — pulls any real prior
+   incident out of shared Durable Object memory (empty until someone
+   records one through the chat — see [`docs/demo.md`](docs/demo.md)).
 
-No open PR right now? Open a small one on this repo yourself (even a
-one-line README edit) — it shows up in the sidebar within ~30 seconds.
+No open PR right now? Open a small one on
+[`forgeguard-demo`](https://github.com/NAVEENKUMARKR777/forgeguard-demo)
+yourself (even a one-line README edit) — it shows up in ForgeGuard's
+sidebar within ~30 seconds.
 
 Two other pages on the same URL, no login: **[/evals](https://forgeguard.forgeguard.workers.dev/evals)**
 (22 deterministic risk/policy/memory/incident/remediation checks, rendered
 from a real recorded run — not hand-typed numbers) and
 **[/productivity](https://forgeguard.forgeguard.workers.dev/productivity)**
 (PR cycle time, CI reliability, real incident frequency — computed from
-this repo's actual history, which for a young repo may be mostly zeros;
-that's honest, not a bug).
+`forgeguard-demo`'s actual history, which for a young repo may be mostly
+zeros; that's honest, not a bug).
 
 For anyone who wants to check the MCP server directly, independent of the
 chat UI — this is a real JSON-RPC endpoint, not a mock (swap `1` for any
@@ -159,9 +174,9 @@ Full system diagram: [`docs/architecture.md`](docs/architecture.md).
   run-over-run comparison are D1-backed, not an in-memory array — see
   [`ADR-015`](docs/decisions/ADR-015-eval-history.md).
 - **Developer productivity** — `productivity/`: PR cycle time, CI/deploy
-  reliability, real incident frequency — real aggregation over this repo's
-  actual GitHub/CI/incident history (`source: "live"`), rendered at
-  `/productivity`.
+  reliability, real incident frequency — real aggregation over
+  `forgeguard-demo`'s actual GitHub/CI/incident history (`source: "live"`),
+  rendered at `/productivity`.
 - **Audit trail** — `audit/`: every action correlated by `requestId`,
   `sessionId`, and `workflowId`, with automatic secret redaction.
 - **Observability** — `observability/`: structured JSON events for every
@@ -248,7 +263,10 @@ Cloudflare Worker), the open-PR list, merge/close, and productivity
 metrics are all live — see
 [`ADR-002`](docs/decisions/ADR-002-mcp-vs-direct-tools.md) for how this
 module was fixture-backed early on and why that stopped being the right
-call once this was a real, live-deployed thing someone would click on.
+call once this was a real, live-deployed thing someone would click on,
+and [`ADR-021`](docs/decisions/ADR-021-demo-target-repo.md) for why PR
+analysis/merge/close point at the separate `forgeguard-demo` repo rather
+than this one.
 The agent, shared memory, risk/policy/GitOps engines, all three workflows'
 approval loops, the MCP server, Code Mode's sandboxed execution,
 observability, and the React dashboard are verified end-to-end — the

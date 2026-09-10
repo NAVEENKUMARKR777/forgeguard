@@ -2,16 +2,25 @@
 
 # GITHUB_TOKEN is required for almost everything: there are no fixtures
 # left in this codebase (see docs/decisions/ADR-002-mcp-vs-direct-tools.md)
-# — PR/CI/GitOps data, the open-PR list, and merge/close all call the real
-# GitHub API. Without it, those all degrade to null/empty/no-op rather
-# than throwing, but the demo has nothing real to show. A fine-grained PAT
-# scoped to just GITHUB_REPO with read-only Contents + Pull requests
-# covers everything except merge/close, which additionally need
-# Pull requests: Read and write.
+# — PR/CI data, the open-PR list, and merge/close all call the real
+# GitHub API for GITHUB_REPO. Without it, those all degrade to
+# null/empty/no-op rather than throwing, but the demo has nothing real to
+# show. A fine-grained PAT scoped to just GITHUB_REPO with read-only
+# Contents + Pull requests covers everything except merge/close, which
+# additionally need Pull requests: Read and write.
 # GITHUB_TOKEN=ghp_...
-# GITHUB_REPO defaults to "NAVEENKUMARKR777/forgeguard" (set in
-# wrangler.jsonc `vars`) — override here to point at a different repo.
+# GITHUB_REPO is the repo PRs are analyzed/merged/closed against —
+# deliberately NOT this repo (using ForgeGuard shouldn't mean ForgeGuard
+# changing its own source — see ADR-021), defaults to
+# "NAVEENKUMARKR777/forgeguard-demo" (set in wrangler.jsonc `vars`).
 # GITHUB_REPO=owner/repo
+
+# DEPLOY_REPO is a different thing: it's always the repo actually
+# deployed as this Worker (this one), used only by gitops/state.ts to
+# compare real git history against the real deployed commit. Doesn't
+# track GITHUB_REPO — see ADR-021. Defaults to
+# "NAVEENKUMARKR777/forgeguard" (set in wrangler.jsonc `vars`).
+# DEPLOY_REPO=owner/repo
 
 # MODEL_PROVIDER defaults to "workers-ai" (set in wrangler.jsonc `vars`) and
 # needs `wrangler login` / a Cloudflare account, not a key here. Set it here
@@ -35,7 +44,7 @@
 
 # Needed for the real GitOps drift check (mcp/cloudflare.ts +
 # gitops/state.ts — compares the real deployed Worker version against
-# GITHUB_REPO's master HEAD). A token scoped to Account -> Workers
+# DEPLOY_REPO's master HEAD). A token scoped to Account -> Workers
 # Scripts: Read is enough locally; CI's deploy job needs Edit to actually
 # deploy. Without these, GitOps drift degrades to "unknown" rather than
 # throwing.

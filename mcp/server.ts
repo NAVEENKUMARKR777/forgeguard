@@ -143,7 +143,7 @@ function buildServer(env: Env): McpServer {
       inputSchema: { service: z.string().describe("Service id, e.g. payment-service") }
     },
     traced("get_deployment", async ({ service }) => {
-      const meta = getService(service);
+      const meta = getService(env, service);
       if (!meta) {
         return { content: [{ type: "text", text: `No service metadata on record for "${service}".` }], isError: true };
       }

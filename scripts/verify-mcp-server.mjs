@@ -84,14 +84,15 @@ async function main() {
       `tools/list returns exactly the expected tools (got ${JSON.stringify(toolNames)})`
     );
 
-    // PR #1 is a real, stable (closed) PR on the configured repo, used here
-    // purely as a fixed target — see docs/decisions/ADR-002. Real GitHub
-    // data, not a fixture.
+    // PR #1 is a real PR on the configured GITHUB_REPO target
+    // (forgeguard-demo — a separate repo so analyzing/merging PRs never
+    // touches ForgeGuard's own source, see ADR-021), used here purely as
+    // a fixed reference. Real GitHub data, not a fixture — see ADR-002.
     const call = await jsonrpc("tools/call", { name: "get_pull_request", arguments: { number: 1 } });
     const text = call.result.content[0].text;
     const pr = JSON.parse(text);
     assert(pr.number === 1, "tools/call get_pull_request(1) returns real PR #1");
-    assert(pr.service === "forgeguard", "returned PR has the expected service field");
+    assert(pr.service === "forgeguard-demo", "returned PR has the expected service field");
 
     const missing = await jsonrpc("tools/call", { name: "get_pull_request", arguments: { number: 999999 } });
     assert(missing.result.isError === true, "tools/call for an unknown PR number returns isError, not a crash");

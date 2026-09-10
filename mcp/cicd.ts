@@ -18,7 +18,7 @@ interface GhJob {
 }
 
 function repoTarget(env: Env): string {
-  return env.GITHUB_REPO || "NAVEENKUMARKR777/forgeguard";
+  return env.GITHUB_REPO || "NAVEENKUMARKR777/forgeguard-demo";
 }
 
 async function githubGet<T>(env: Env, path: string): Promise<T | null> {

@@ -37,7 +37,7 @@ export class IncidentWorkflow extends WorkflowEntrypoint<Env, IncidentWorkflowPa
     const { service, symptom } = event.payload;
 
     const signals = await step.do("gather-signals", async () => {
-      const meta = getService(service);
+      const meta = getService(this.env, service);
       const incidents = await engineeringMemoryStub(this.env).getIncidentsForService(service);
       const gitopsState = await getGitOpsState(this.env);
       const drift = gitopsState ? detectDrift(gitopsState) : null;

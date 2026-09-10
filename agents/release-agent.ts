@@ -45,7 +45,7 @@ async function gatherEvidence(
   // configured/reachable. See agents/codemode-investigate.ts.
   const pr = await getPullRequest(env, prNumber);
   if (!pr) return null;
-  const service = getService(pr.service);
+  const service = getService(env, pr.service);
   const pipeline = await getPipeline(env, prNumber);
   const incidents = service ? await engineeringMemoryStub(env).getIncidentsForService(service.id) : [];
   return { pr, service, pipeline, incidents };

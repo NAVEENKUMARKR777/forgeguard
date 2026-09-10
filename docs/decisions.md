@@ -25,3 +25,4 @@ the order they were made.
 | [018](decisions/ADR-018-dev-server-local-mode.md) | `wrangler dev --local` for `npm run dev`/`dev:worker-only` |
 | [019](decisions/ADR-019-groq-provider.md) | Groq as a verified alternative model provider |
 | [020](decisions/ADR-020-stale-reuse-detection.md) | Detecting a false-negative `reused` flag in chat, not just in tests |
+| [021](decisions/ADR-021-demo-target-repo.md) | A separate demo target repo (`forgeguard-demo`), so using ForgeGuard never changes ForgeGuard |
