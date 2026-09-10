@@ -9,7 +9,7 @@ SDK, Workflows, Workers AI, Code Mode, and the Model Context Protocol.
 
 Everything below is against real data on this actual repo — no fixtures,
 no simulated steps. Open the link above; the sidebar polls the real list
-of open pull requests on this repo (~15s refresh). If one's open, click
+of open pull requests on this repo (~30s refresh). If one's open, click
 it, or type a prompt naming any real PR number:
 
 1. `Is PR #N safe to deploy?` — real risk scoring and a plain-language
@@ -33,7 +33,7 @@ it, or type a prompt naming any real PR number:
    through the chat — see [`docs/demo.md`](docs/demo.md)).
 
 No open PR right now? Open a small one on this repo yourself (even a
-one-line README edit) — it shows up in the sidebar within ~15 seconds.
+one-line README edit) — it shows up in the sidebar within ~30 seconds.
 
 Two other pages on the same URL, no login: **[/evals](https://forgeguard.forgeguard.workers.dev/evals)**
 (22 deterministic risk/policy/memory/incident/remediation checks, rendered
@@ -124,9 +124,10 @@ Full system diagram: [`docs/architecture.md`](docs/architecture.md).
   risk across 7 deterministic dimensions, evaluates policy, and narrates
   the result.
 - **Release workflow** — `workflows/release-workflow.ts`: gather-evidence →
-  assess-risk → evaluate-policy → (`waitForEvent`) → approved/rejected.
-  On approval, `RemediationWorkflow` automatically simulates the
-  canary → check-health → promote → verify rollout.
+  assess-risk → evaluate-policy → (`waitForEvent`) → approved/rejected. On
+  approval, `RemediationWorkflow` polls the PR's real CI to completion.
+  Merging or closing the PR for real is a separate, explicit decision
+  (`agents/release-agent.ts#mergePullRequest`/`closePullRequest`).
 - **Incident investigation** — `agents/incident-agent.ts` +
   `workflows/incident-workflow.ts`: correlates a symptom against
   engineering memory and GitOps drift into a confidence-scored root-cause
@@ -152,14 +153,14 @@ Full system diagram: [`docs/architecture.md`](docs/architecture.md).
 - **Context engineering** — `context/{ranking,budget,sources}.ts`: ranked,
   deduplicated, token-budgeted context assembly — nothing reaches the model
   it doesn't need.
-- **Evaluation** — `evals/`: 7 suites (risk, tool-selection, policy,
-  memory, incident, remediation, regression), 23 cases, rendered at
+- **Evaluation** — `evals/`: 6 suites (risk, tool-selection, policy,
+  memory, incident, remediation), 22 cases, rendered at
   `/evals` from a real run, never hand-typed numbers. Run history and
   run-over-run comparison are D1-backed, not an in-memory array — see
   [`ADR-015`](docs/decisions/ADR-015-eval-history.md).
 - **Developer productivity** — `productivity/`: PR cycle time, CI/deploy
-  reliability, AI-investigation volume, MTTR — real aggregation over
-  generated (clearly `source: "fixture"`-labeled) daily data, rendered at
+  reliability, real incident frequency — real aggregation over this repo's
+  actual GitHub/CI/incident history (`source: "live"`), rendered at
   `/productivity`.
 - **Audit trail** — `audit/`: every action correlated by `requestId`,
   `sessionId`, and `workflowId`, with automatic secret redaction.
@@ -180,19 +181,24 @@ npm run dev
 This runs `wrangler dev` (the Worker) and `vite dev` (the dashboard, with
 HMR) together — open the **Vite URL** it prints (typically
 `http://localhost:5173`), not the wrangler one; Vite proxies `/agents` and
-`/mcp` through to the Worker (see `apps/dashboard/vite.config.ts`). Try
-`Is PR #1842 safe to deploy?`, then walk through
+`/mcp` through to the Worker (see `apps/dashboard/vite.config.ts`). Needs a
+`GITHUB_TOKEN` in `.dev.vars` to see real data (see `.dev.vars.example`) —
+then try `Is PR #N safe to deploy?` for a real PR number, and walk through
 [`docs/demo.md`](docs/demo.md) for the full tour.
 
 To run just the built Worker (no dashboard hot-reload — useful for
 checking exactly what will actually deploy): `npm run dev:worker-only`.
 
-**Everything works with no external credentials** except the model's
+**Two things need real credentials, everything else runs fully local:**
+a `GITHUB_TOKEN` in `.dev.vars` (see `.dev.vars.example`) — without it,
+every GitHub-backed function degrades to null/empty rather than throwing,
+but there's no real PR/CI/GitOps data to show; and the model's
 plain-language narration (Workers AI isn't locally simulated — run
 `wrangler login` first, or `wrangler dev --remote`; without it, the agent
 falls back to a short generated message rather than crashing). Risk
-scoring, policy, GitOps, memory, workflows/approval, Code Mode, the MCP
-server, and the productivity/eval dashboards all run fully local.
+scoring, policy, memory, workflows/approval, Code Mode, the MCP server,
+and the eval dashboard's deterministic suites all run fully local and
+credential-free.
 
 ```
 npm run typecheck   # regenerates worker-configuration.d.ts (wrangler types), then
@@ -272,20 +278,22 @@ agents/
 workflows/               ReleaseWorkflow, IncidentWorkflow, RemediationWorkflow,
                          idempotent-create.ts (replay-safe instance creation)
 durable-objects/         EngineeringMemoryStore (shared incident/fact memory)
-mcp/                     real MCP server (9 tools) + fixture-backed GitHub/CI
-                         data + tool metadata registry + Cloudflare API adapter
+mcp/                     real MCP server (9 tools) + real GitHub/GitHub Actions
+                         client (read + merge/close write) + tool metadata
+                         registry + Cloudflare API adapter
 gitops/                  desired/deployed/CI-commit drift detection
 risk/                    deterministic risk scoring (7 dimensions)
 policy/                  policy-as-code (YAML) + enforcement engine
 incident/                extracted, testable root-cause correlation
 remediation/             extracted, testable remediation plan generator
 context/                 ranked, deduplicated, token-budgeted context assembly
-productivity/            developer-productivity metrics (fixtures, aggregation, API)
+productivity/            developer-productivity metrics (real GitHub/CI/incident
+                         aggregation, API)
 audit/                   structured, request-correlated, secret-redacting audit trail
 observability/           structured JSON events for LLM/tool/context calls
 memory/                  portable SQL helpers (incidents, audit, engineering facts)
-fixtures/                synthetic PR/service/CI/incident/GitOps data
-evals/                   risk, tool-selection, policy, memory, incident, remediation, regression;
+evals/                   risk, tool-selection, policy, memory, incident, remediation
+                         (fully inline synthetic inputs, no fixtures — see ADR-002);
                          history-api.ts (D1-backed run history/comparison), compare.ts (pure diff)
 migrations/eval-history/ D1 schema for eval run history (ADR-015)
 tests/                   vitest unit tests; tests/security/ for safety invariants (10 files)

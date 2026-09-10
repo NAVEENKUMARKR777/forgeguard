@@ -167,19 +167,34 @@ export async function getDiff(env: Env, number: number): Promise<string | null> 
   return pr.diff_text ?? pr.diff_summary.map((d) => `${d.path} (+${d.additions}/-${d.deletions})`).join("\n");
 }
 
+const OPEN_PRS_CACHE_TTL_MS = 30_000;
+let openPrsCache: { repo: string; expiresAt: number; data: OpenPullRequest[] } | null = null;
+
 /** Real open pull requests on the repo — powers the dashboard's live
- * sidebar list (polled, see apps/dashboard/src/hooks/useOpenPullRequests.ts). */
+ * sidebar list (polled, see apps/dashboard/src/hooks/useOpenPullRequests.ts).
+ * Cached in-isolate for OPEN_PRS_CACHE_TTL_MS: every connected dashboard
+ * polls independently, and on the Workers free plan that's both extra
+ * requests and extra GitHub API rate-limit spend for data that doesn't
+ * change second-to-second. Best-effort only (a fresh isolate starts with
+ * an empty cache) — that's fine, this is a UI convenience, not anything
+ * correctness-sensitive. */
 export async function fetchOpenPullRequests(env: Env): Promise<OpenPullRequest[]> {
   if (!env.GITHUB_TOKEN) return [];
   const repo = repoTarget(env);
+  if (openPrsCache && openPrsCache.repo === repo && openPrsCache.expiresAt > Date.now()) {
+    return openPrsCache.data;
+  }
+
   const prs = await githubGet<GhPullRequest[]>(env, `/repos/${repo}/pulls?state=open&per_page=20`);
-  return (prs ?? []).map((pr) => ({
+  const data = (prs ?? []).map((pr) => ({
     number: pr.number,
     title: pr.title,
     author: pr.user?.login ?? "unknown",
     headSha: pr.head.sha,
     updatedAt: pr.updated_at
   }));
+  openPrsCache = { repo, expiresAt: Date.now() + OPEN_PRS_CACHE_TTL_MS, data };
+  return data;
 }
 
 /** Substring search over changed file paths across currently open pull
