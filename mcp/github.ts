@@ -28,7 +28,10 @@ export function getPullRequest(number: number): PullRequest | null {
  * against the real repo when `GITHUB_TOKEN` is configured — see
  * mcp/github-live.ts and ADR-002.
  */
-export async function resolvePullRequest(env: Env, number: number): Promise<PullRequest | null> {
+export async function resolvePullRequest(
+  env: { GITHUB_TOKEN?: string; GITHUB_REPO?: string },
+  number: number
+): Promise<PullRequest | null> {
   return getPullRequest(number) ?? fetchLivePullRequest(env, number);
 }
 

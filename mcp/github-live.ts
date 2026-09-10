@@ -30,14 +30,15 @@ interface GhPullRequest {
   head: { sha: string };
 }
 
-function repoTarget(env: Env): string {
-  return env.GITHUB_REPO || "NAVEENKUMARKR777/forgeguard";
+interface GithubConfig {
+  token: string;
+  repo: string;
 }
 
-async function githubGet<T>(env: Env, path: string): Promise<T | null> {
+async function githubGet<T>(config: GithubConfig, path: string): Promise<T | null> {
   const res = await fetch(`${GITHUB_API}${path}`, {
     headers: {
-      authorization: `token ${env.GITHUB_TOKEN}`,
+      authorization: `token ${config.token}`,
       accept: "application/vnd.github+json",
       "user-agent": "forgeguard"
     }
@@ -79,18 +80,22 @@ function mapCommit(commit: GhCommit): CommitEntry {
  * `touches_production_config` / `touches_database_migration` are heuristics
  * over changed file paths, matching the pattern the fixtures already use.
  */
-export async function fetchLivePullRequest(env: Env, number: number): Promise<PullRequest | null> {
+export async function fetchLivePullRequest(
+  env: { GITHUB_TOKEN?: string; GITHUB_REPO?: string },
+  number: number
+): Promise<PullRequest | null> {
   if (!env.GITHUB_TOKEN) return null;
-  const repo = repoTarget(env);
+  const config: GithubConfig = { token: env.GITHUB_TOKEN, repo: env.GITHUB_REPO || "NAVEENKUMARKR777/forgeguard" };
+  const repo = config.repo;
 
-  const pr = await githubGet<GhPullRequest>(env, `/repos/${repo}/pulls/${number}`);
+  const pr = await githubGet<GhPullRequest>(config, `/repos/${repo}/pulls/${number}`);
   if (!pr) return null;
 
   const [files, reviews, commits, checkRunsRes] = await Promise.all([
-    githubGet<GhFile[]>(env, `/repos/${repo}/pulls/${number}/files?per_page=100`),
-    githubGet<GhReview[]>(env, `/repos/${repo}/pulls/${number}/reviews`),
-    githubGet<GhCommit[]>(env, `/repos/${repo}/pulls/${number}/commits`),
-    githubGet<{ check_runs: GhCheckRun[] }>(env, `/repos/${repo}/commits/${pr.head.sha}/check-runs`)
+    githubGet<GhFile[]>(config, `/repos/${repo}/pulls/${number}/files?per_page=100`),
+    githubGet<GhReview[]>(config, `/repos/${repo}/pulls/${number}/reviews`),
+    githubGet<GhCommit[]>(config, `/repos/${repo}/pulls/${number}/commits`),
+    githubGet<{ check_runs: GhCheckRun[] }>(config, `/repos/${repo}/commits/${pr.head.sha}/check-runs`)
   ]);
 
   const fileList = files ?? [];
