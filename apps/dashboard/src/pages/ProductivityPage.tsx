@@ -3,7 +3,6 @@ import { Header } from "../components/Header";
 import { StatTile } from "../components/StatTile";
 import type { ProductivitySnapshot } from "../types";
 
-const SERVICES = ["all", "payment-service", "checkout-service", "identity-service", "notifications-service"];
 const WINDOWS: { value: string; label: string }[] = [
   { value: "7d", label: "7 days" },
   { value: "30d", label: "30 days" },
@@ -37,21 +36,20 @@ function BucketChart({ buckets }: { buckets: ProductivitySnapshot["buckets"] }) 
 }
 
 export function ProductivityPage() {
-  const [service, setService] = useState("all");
   const [window_, setWindow] = useState("30d");
   const [snapshot, setSnapshot] = useState<ProductivitySnapshot | null>(null);
   const [error, setError] = useState(false);
 
   useEffect(() => {
     setError(false);
-    fetch(`/productivity/metrics?service=${service}&window=${window_}`)
+    fetch(`/productivity/metrics?window=${window_}`)
       .then((r) => {
         if (!r.ok) throw new Error("not found");
         return r.json();
       })
       .then(setSnapshot)
       .catch(() => setError(true));
-  }, [service, window_]);
+  }, [window_]);
 
   return (
     <div className="grid h-full grid-cols-1 grid-rows-[auto_1fr]">
@@ -59,27 +57,13 @@ export function ProductivityPage() {
       <div className="mx-auto w-full max-w-4xl overflow-y-auto px-6 py-6">
         <div className="mb-4 flex flex-wrap items-center gap-3">
           <p className="text-xs text-muted">
-            Developer productivity / ADLC metrics —{" "}
-            <span className="rounded bg-panel-2 px-1.5 py-0.5 font-medium text-warning">source: synthetic fixture data</span>,
-            never live production telemetry.
+            Development / CI/CD metrics for this repo —{" "}
+            <span className="rounded bg-panel-2 px-1.5 py-0.5 font-medium text-success">source: live GitHub data</span>,
+            not synthetic. A young, low-traffic repo will show mostly zero-activity days — that's real, not a bug.
           </p>
         </div>
 
         <div className="mb-6 flex flex-wrap gap-4">
-          <label className="flex items-center gap-2 text-xs text-muted">
-            Service
-            <select
-              value={service}
-              onChange={(e) => setService(e.target.value)}
-              className="rounded-md border border-border-2 bg-panel px-2 py-1 text-ink"
-            >
-              {SERVICES.map((s) => (
-                <option key={s} value={s}>
-                  {s}
-                </option>
-              ))}
-            </select>
-          </label>
           <label className="flex items-center gap-2 text-xs text-muted">
             Window
             <select
@@ -96,14 +80,13 @@ export function ProductivityPage() {
           </label>
         </div>
 
-        {error && <p className="text-sm text-muted">Could not load productivity data for that service.</p>}
+        {error && <p className="text-sm text-muted">Could not load productivity data.</p>}
 
         {snapshot && (
           <>
             <Section title="Development">
               <StatTile label="PRs merged" value={snapshot.development.prThroughput} />
               <StatTile label="Avg cycle time" value={snapshot.development.avgCycleTimeHours} unit="h" />
-              <StatTile label="Avg review time" value={snapshot.development.avgReviewTimeHours} unit="h" />
               <StatTile label="Avg files changed" value={snapshot.development.avgFilesChangedPerPr} />
               <StatTile label="Avg commits/PR" value={snapshot.development.avgCommitsPerPr} />
             </Section>
@@ -115,22 +98,8 @@ export function ProductivityPage() {
               <StatTile label="Rollback frequency" value={snapshot.cicd.rollbackFrequencyPerWeek} unit="/wk" />
             </Section>
 
-            <Section title="AI / agent activity">
-              <StatTile label="Investigations" value={snapshot.ai.agentInvestigations} />
-              <StatTile label="Tool invocations" value={snapshot.ai.toolInvocations} />
-              <StatTile label="Recommendations" value={snapshot.ai.recommendations} />
-              <StatTile label="Approval requests" value={snapshot.ai.approvalRequests} />
-              <StatTile label="Policy denials" value={snapshot.ai.policyDenials} />
-              <StatTile
-                label="Remediation success"
-                value={`${Math.round(snapshot.ai.automatedRemediationSuccessRate * 100)}%`}
-              />
-            </Section>
-
             <Section title="Reliability">
               <StatTile label="Incident frequency" value={snapshot.reliability.incidentFrequencyPerWeek} unit="/wk" />
-              <StatTile label="Mean time to detect" value={snapshot.reliability.meanTimeToDetectionMinutes} unit="min" />
-              <StatTile label="Mean time to recover" value={snapshot.reliability.meanTimeToRecoveryMinutes} unit="min" />
             </Section>
 
             <section>

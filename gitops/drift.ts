@@ -1,9 +1,4 @@
-import type { CommitRef, DriftResult, GitOpsState } from "../types/gitops";
-
-function seqOf(commits: CommitRef[], sha: string | null): number | null {
-  if (!sha) return null;
-  return commits.find((c) => c.sha === sha)?.seq ?? null;
-}
+import type { DriftResult, GitOpsState } from "../types/gitops";
 
 /**
  * Deterministic drift detection — no LLM involvement (this is exactly the
@@ -13,7 +8,7 @@ function seqOf(commits: CommitRef[], sha: string | null): number | null {
  * optimistic guess — see docs/decisions/ADR-009-gitops.md.
  */
 export function detectDrift(state: GitOpsState): DriftResult {
-  const { desiredCommit, deployedCommit, ciCommit, deploymentStatus } = state;
+  const { desiredCommit, deployedCommit, ciCommit, deploymentStatus, aheadBy, behindBy } = state;
 
   if (!desiredCommit || !deployedCommit) {
     return {
@@ -25,7 +20,7 @@ export function detectDrift(state: GitOpsState): DriftResult {
   if (deploymentStatus === "failed") {
     return {
       status: "reconciliation_failed",
-      reasons: [`deployment status is "failed" for ${state.service} in ${state.environment}`]
+      reasons: [`deployment status is "failed" for ${state.service}`]
     };
   }
 
@@ -43,21 +38,27 @@ export function detectDrift(state: GitOpsState): DriftResult {
     };
   }
 
-  const desiredSeq = seqOf(state.commits, desiredCommit);
-  const deployedSeq = seqOf(state.commits, deployedCommit);
-
-  if (desiredSeq === null || deployedSeq === null) {
+  if (aheadBy === null || behindBy === null) {
     return {
       status: "unknown",
-      reasons: ["insufficient evidence: desired or deployed commit not found in known commit sequence"]
+      reasons: ["insufficient evidence: could not compare desired and deployed commits"]
     };
   }
 
-  if (deployedSeq < desiredSeq) {
+  if (behindBy > 0) {
+    return {
+      status: "deployment_ahead",
+      reasons: [
+        `deployed commit ${deployedCommit} is ${behindBy} commit(s) ahead of desired commit ${desiredCommit} — likely deployed outside the normal Git flow (hotfix, manual rollback target, etc.)`
+      ]
+    };
+  }
+
+  if (aheadBy > 0) {
     return {
       status: "deployment_behind",
       reasons: [
-        `deployed commit ${deployedCommit} (seq ${deployedSeq}) is behind desired commit ${desiredCommit} (seq ${desiredSeq})`,
+        `deployed commit ${deployedCommit} is ${aheadBy} commit(s) behind desired commit ${desiredCommit}`,
         ciCommit === desiredCommit
           ? "CI has already validated the desired commit — deployment just hasn't rolled out yet"
           : "CI has not yet validated the desired commit"
@@ -66,9 +67,7 @@ export function detectDrift(state: GitOpsState): DriftResult {
   }
 
   return {
-    status: "deployment_ahead",
-    reasons: [
-      `deployed commit ${deployedCommit} (seq ${deployedSeq}) is ahead of desired commit ${desiredCommit} (seq ${desiredSeq}) — likely deployed outside the normal Git flow (hotfix, manual rollback target, etc.)`
-    ]
+    status: "unknown",
+    reasons: ["desired and deployed commits differ but no ahead/behind distance was reported"]
   };
 }

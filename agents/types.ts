@@ -13,7 +13,7 @@ export interface Investigation {
   risk: RiskAssessment;
   policy: PolicyDecision;
   workflowInstanceId?: string;
-  status: "analyzed" | "workflow_running" | "waiting_approval" | "resolved";
+  status: "analyzed" | "workflow_running" | "waiting_approval" | "resolved" | "merged" | "closed";
 }
 
 export interface PendingApproval {

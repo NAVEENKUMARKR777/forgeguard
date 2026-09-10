@@ -1,5 +1,5 @@
 import type { SqlFn } from "./sql";
-import type { IncidentFixture } from "../mcp/types";
+import type { IncidentRecord } from "../mcp/types";
 
 export interface IncidentRow {
   id: string;
@@ -10,7 +10,7 @@ export interface IncidentRow {
   created_at: number;
 }
 
-export function recordIncident(sql: SqlFn, incident: IncidentFixture): void {
+export function recordIncident(sql: SqlFn, incident: IncidentRecord): void {
   sql`INSERT OR IGNORE INTO incident_memory (id, service, cause, resolution, learned_rule, created_at)
       VALUES (${incident.id}, ${incident.service}, ${incident.cause}, ${incident.resolution}, ${incident.learned_rule}, ${Date.now()})`;
 }

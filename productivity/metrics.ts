@@ -1,44 +1,37 @@
-import { rowsInWindow, bucketRows, sum, average } from "./aggregates";
-import { KNOWN_SERVICES } from "./fixtures";
+import { fetchDailyMetrics } from "./fixtures";
+import { rowsInWindow, bucketRows, sum, ratio, perWeek } from "./aggregates";
 import type { ProductivitySnapshot, ProductivityWindow } from "../types/productivity";
-
-function ratio(numerator: number, denominator: number): number {
-  if (denominator === 0) return 0;
-  return Math.round((numerator / denominator) * 1000) / 1000;
-}
-
-function perWeek(total: number, windowDays: number): number {
-  return Math.round((total / windowDays) * 7 * 10) / 10;
-}
+import type { IncidentRow } from "../memory/incidents";
 
 /**
- * The one function that turns raw daily rows into the metrics the plan
- * asks for. Every number here is computed from productivity/fixtures.ts —
- * nothing is a hardcoded "looks plausible" constant. `source: "fixture"`
- * is load-bearing: the React productivity view must never present this as
- * live telemetry (see docs/decisions/ADR-012-productivity-metrics.md).
+ * Turns real daily rows (productivity/fixtures.ts — real GitHub/incident
+ * data despite the filename, kept for the existing import path) into the
+ * metrics the dashboard renders. `source: "live"` is load-bearing: this
+ * must never silently drift back to fabricated numbers — see
+ * docs/decisions/ADR-012-productivity-metrics.md.
  */
-export function getProductivitySnapshot(service: string, windowDays: ProductivityWindow): ProductivitySnapshot | null {
-  if (service !== "all" && !KNOWN_SERVICES.includes(service)) return null;
+export async function getProductivitySnapshot(
+  env: Env,
+  windowDays: ProductivityWindow,
+  incidents: IncidentRow[] = []
+): Promise<ProductivitySnapshot> {
+  const allRows = await fetchDailyMetrics(env, incidents);
+  const rows = rowsInWindow(allRows, windowDays);
 
-  const rows = rowsInWindow(service, windowDays);
+  const prsMerged = sum(rows, "prsMerged");
   const ciRuns = sum(rows, "ciRuns");
   const ciFailures = sum(rows, "ciFailures");
   const deployments = sum(rows, "deployments");
   const deploymentFailures = sum(rows, "deploymentFailures");
-  const remediationAttempts = sum(rows, "remediationAttempts");
-  const successfulRemediations = sum(rows, "successfulRemediations");
 
   return {
-    service,
     windowDays,
-    source: "fixture",
+    source: "live",
     development: {
-      prThroughput: sum(rows, "prsMerged"),
-      avgCycleTimeHours: average(rows, "avgCycleHours"),
-      avgReviewTimeHours: average(rows, "avgReviewHours"),
-      avgFilesChangedPerPr: average(rows, "avgFilesChanged"),
-      avgCommitsPerPr: average(rows, "avgCommitsPerPr")
+      prThroughput: prsMerged,
+      avgCycleTimeHours: prsMerged > 0 ? Math.round((sum(rows, "cycleHoursSum") / prsMerged) * 10) / 10 : 0,
+      avgFilesChangedPerPr: prsMerged > 0 ? Math.round((sum(rows, "filesChangedSum") / prsMerged) * 10) / 10 : 0,
+      avgCommitsPerPr: prsMerged > 0 ? Math.round((sum(rows, "commitsSum") / prsMerged) * 10) / 10 : 0
     },
     cicd: {
       ciSuccessRate: ratio(ciRuns - ciFailures, ciRuns),
@@ -46,25 +39,9 @@ export function getProductivitySnapshot(service: string, windowDays: Productivit
       deploymentSuccessRate: ratio(deployments - deploymentFailures, deployments),
       rollbackFrequencyPerWeek: perWeek(sum(rows, "rollbacks"), windowDays)
     },
-    ai: {
-      agentInvestigations: sum(rows, "agentInvestigations"),
-      toolInvocations: sum(rows, "toolInvocations"),
-      recommendations: sum(rows, "recommendations"),
-      approvalRequests: sum(rows, "approvalRequests"),
-      policyDenials: sum(rows, "policyDenials"),
-      remediationAttempts,
-      successfulRemediations,
-      automatedRemediationSuccessRate: ratio(successfulRemediations, remediationAttempts)
-    },
     reliability: {
-      incidentFrequencyPerWeek: perWeek(sum(rows, "incidents"), windowDays),
-      meanTimeToDetectionMinutes: average(rows, "avgDetectionMinutes"),
-      meanTimeToRecoveryMinutes: average(rows, "avgRecoveryMinutes")
+      incidentFrequencyPerWeek: perWeek(sum(rows, "incidents"), windowDays)
     },
     buckets: bucketRows(rows, windowDays <= 7 ? "daily" : "weekly")
   };
-}
-
-export function listServices(): string[] {
-  return KNOWN_SERVICES;
 }

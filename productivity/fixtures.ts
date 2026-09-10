@@ -1,67 +1,120 @@
 import type { DailyMetricRow } from "../types/productivity";
+import type { IncidentRow } from "../memory/incidents";
 
-const SERVICES = ["payment-service", "checkout-service", "identity-service", "notifications-service"];
+const GITHUB_API = "https://api.github.com";
 const DAYS = 90;
-/** Fixed anchor so regenerating this fixture is stable across runs/environments. */
-const ANCHOR = new Date("2026-09-09T00:00:00Z");
 
-/** Small deterministic hash — not cryptographic, just a repeatable way to
- * turn (service, dayIndex) into varied-but-stable numbers. */
-function hash(service: string, dayIndex: number): number {
-  let h = (dayIndex + 1) * 2654435761;
-  for (let i = 0; i < service.length; i++) {
-    h = (h ^ service.charCodeAt(i)) * 16777619;
-  }
-  return Math.abs(h) % 100;
+interface GhPull {
+  title: string;
+  created_at: string;
+  merged_at: string | null;
+  changed_files?: number;
+  commits?: number;
+}
+interface GhRun {
+  created_at: string;
+  conclusion: string | null;
+}
+
+function repoTarget(env: Env): string {
+  return env.GITHUB_REPO || "NAVEENKUMARKR777/forgeguard";
+}
+
+async function githubGet<T>(env: Env, path: string): Promise<T | null> {
+  const res = await fetch(`${GITHUB_API}${path}`, {
+    headers: {
+      authorization: `token ${env.GITHUB_TOKEN}`,
+      accept: "application/vnd.github+json",
+      "user-agent": "forgeguard"
+    }
+  });
+  if (!res.ok) return null;
+  return (await res.json()) as T;
+}
+
+function dayKey(iso: string): string {
+  return iso.slice(0, 10);
 }
 
 /**
- * Deterministic, formula-generated synthetic daily engineering metrics —
- * explicitly synthetic (see `source: "fixture"` on every derived snapshot
- * in productivity/metrics.ts), never claimed as live telemetry anywhere.
- * Generated rather than hand-typed so 90 days × 4 services doesn't become
- * an unreviewable wall of hand-authored JSON, and so the same day always
- * reproduces the same row (no hidden randomness).
+ * Real daily engineering metrics for the one real repo this project has —
+ * built from the actual GitHub PR/Actions history and real incident
+ * memory, not a synthetic generator. A young, low-traffic repo will show
+ * mostly zero-activity days; that's honest, not a bug — see
+ * docs/decisions/ADR-012-productivity-metrics.md.
  */
-export function generateDailyMetrics(): DailyMetricRow[] {
-  const rows: DailyMetricRow[] = [];
-  for (let dayIndex = 0; dayIndex < DAYS; dayIndex++) {
-    const date = new Date(ANCHOR);
-    date.setUTCDate(date.getUTCDate() - dayIndex);
-    const dateStr = date.toISOString().slice(0, 10);
+export async function fetchDailyMetrics(env: Env, incidents: IncidentRow[]): Promise<DailyMetricRow[]> {
+  const repo = repoTarget(env);
+  const today = new Date();
+  const days: string[] = [];
+  for (let i = 0; i < DAYS; i++) {
+    const d = new Date(today);
+    d.setUTCDate(d.getUTCDate() - i);
+    days.push(d.toISOString().slice(0, 10));
+  }
 
-    for (const service of SERVICES) {
-      const seed = hash(service, dayIndex);
-      const prsMerged = seed % 4;
-      rows.push({
-        date: dateStr,
-        service,
-        deployments: seed % 3,
-        deploymentFailures: seed % 11 === 0 ? 1 : 0,
-        rollbacks: seed % 23 === 0 ? 1 : 0,
-        incidents: seed % 17 === 0 ? 1 : 0,
-        avgDetectionMinutes: 5 + (seed % 20),
-        avgRecoveryMinutes: 15 + (seed % 60),
-        prsOpened: 1 + (seed % 4),
-        prsMerged,
-        avgCycleHours: 4 + (seed % 30),
-        avgReviewHours: 1 + (seed % 8),
-        avgFilesChanged: 2 + (seed % 25),
-        avgCommitsPerPr: 1 + (seed % 5),
-        ciRuns: 2 + (seed % 6),
-        ciFailures: seed % 7 === 0 ? 1 : 0,
-        agentInvestigations: seed % 5,
-        toolInvocations: (seed % 5) * 3,
-        recommendations: seed % 3,
-        approvalRequests: seed % 4 === 0 ? 1 : 0,
-        policyDenials: seed % 13 === 0 ? 1 : 0,
-        remediationAttempts: seed % 9 === 0 ? 1 : 0,
-        successfulRemediations: seed % 9 === 0 && seed % 2 === 0 ? 1 : 0
-      });
+  const rows = new Map<string, DailyMetricRow>(
+    days.map((date) => [
+      date,
+      {
+        date,
+        deployments: 0,
+        deploymentFailures: 0,
+        rollbacks: 0,
+        incidents: 0,
+        prsOpened: 0,
+        prsMerged: 0,
+        cycleHoursSum: 0,
+        filesChangedSum: 0,
+        commitsSum: 0,
+        ciRuns: 0,
+        ciFailures: 0
+      }
+    ])
+  );
+
+  if (!env.GITHUB_TOKEN) return [...rows.values()];
+
+  const [pulls, runs] = await Promise.all([
+    githubGet<GhPull[]>(env, `/repos/${repo}/pulls?state=all&per_page=100&sort=created&direction=desc`),
+    githubGet<{ workflow_runs: GhRun[] }>(env, `/repos/${repo}/actions/runs?branch=master&per_page=100`)
+  ]);
+
+  for (const pr of pulls ?? []) {
+    const openedDay = dayKey(pr.created_at);
+    if (rows.has(openedDay)) rows.get(openedDay)!.prsOpened += 1;
+
+    if (pr.merged_at) {
+      const mergedDay = dayKey(pr.merged_at);
+      const row = rows.get(mergedDay);
+      if (row) {
+        row.prsMerged += 1;
+        row.deployments += 1; // a real merge to master triggers a real CI deploy
+        row.cycleHoursSum += (new Date(pr.merged_at).getTime() - new Date(pr.created_at).getTime()) / 3_600_000;
+        row.filesChangedSum += pr.changed_files ?? 0;
+        row.commitsSum += pr.commits ?? 0;
+        if (/^revert/i.test(pr.title)) row.rollbacks += 1;
+      }
     }
   }
-  return rows;
-}
 
-export const DAILY_METRICS: DailyMetricRow[] = generateDailyMetrics();
-export const KNOWN_SERVICES = SERVICES;
+  for (const run of runs?.workflow_runs ?? []) {
+    const day = dayKey(run.created_at);
+    const row = rows.get(day);
+    if (row) {
+      row.ciRuns += 1;
+      if (run.conclusion && run.conclusion !== "success") {
+        row.deploymentFailures += 1;
+        row.ciFailures += 1;
+      }
+    }
+  }
+
+  for (const incident of incidents ?? []) {
+    const day = dayKey(new Date(incident.created_at).toISOString());
+    const row = rows.get(day);
+    if (row) row.incidents += 1;
+  }
+
+  return [...rows.values()];
+}

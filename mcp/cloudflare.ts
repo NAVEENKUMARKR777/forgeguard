@@ -46,3 +46,30 @@ export async function getZone(env: Env, zoneId: string): Promise<unknown> {
 export async function getSecurityEvents(env: Env, zoneId: string): Promise<unknown> {
   return callCloudflareApi(env, `/zones/${zoneId}/security/events`);
 }
+
+interface WorkerDeployment {
+  id: string;
+  created_on: string;
+  annotations?: { "workers/message"?: string };
+}
+
+/**
+ * The git commit SHA actually running right now, read from the latest
+ * real Cloudflare deployment's message annotation — CI tags every deploy
+ * with `wrangler deploy --message "$(git rev-parse HEAD)"` (see
+ * .github/workflows/ci.yml) specifically so this is meaningful. Returns
+ * null (not a throw) on any failure — missing token/account id, no
+ * deployments yet, or a deployment made without the message flag — so
+ * `gitops/state.ts` degrades to "unknown" drift rather than crashing the
+ * whole risk-analysis pipeline over an optional signal.
+ */
+export async function getLatestDeployedCommit(env: Env, scriptName: string): Promise<string | null> {
+  try {
+    const result = await getWorkerDeployments(env, scriptName);
+    const deployments = (result as { deployments?: WorkerDeployment[] }).deployments ?? [];
+    const message = deployments[0]?.annotations?.["workers/message"];
+    return message && /^[0-9a-f]{7,40}$/i.test(message) ? message : null;
+  } catch {
+    return null;
+  }
+}

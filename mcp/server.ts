@@ -1,7 +1,7 @@
 import { McpServer } from "@modelcontextprotocol/server";
 import { createMcpHandler } from "agents/mcp/server";
 import { z } from "zod";
-import { getService, resolvePullRequest, searchCode } from "./github";
+import { getService, getPullRequest, searchCode } from "./github";
 import { getPipeline } from "./cicd";
 import { engineeringMemoryStub } from "../durable-objects/engineering-memory";
 import { withObservability } from "../observability/logger";
@@ -32,7 +32,7 @@ function buildServer(env: Env): McpServer {
       inputSchema: { number: z.number().int().describe("Pull request number, e.g. 1842") }
     },
     traced("get_pull_request", async ({ number }) => {
-      const pr = await resolvePullRequest(env, number);
+      const pr = await getPullRequest(env, number);
       if (!pr) {
         return { content: [{ type: "text", text: `No pull request #${number} on record.` }], isError: true };
       }
@@ -48,7 +48,7 @@ function buildServer(env: Env): McpServer {
       inputSchema: { number: z.number().int() }
     },
     traced("get_checks", async ({ number }) => {
-      const pipeline = getPipeline(number);
+      const pipeline = await getPipeline(env, number);
       if (!pipeline) {
         return { content: [{ type: "text", text: `No CI pipeline on record for PR #${number}.` }], isError: true };
       }
@@ -64,7 +64,7 @@ function buildServer(env: Env): McpServer {
       inputSchema: { number: z.number().int() }
     },
     traced("get_pull_request_files", async ({ number }) => {
-      const pr = await resolvePullRequest(env, number);
+      const pr = await getPullRequest(env, number);
       if (!pr) {
         return { content: [{ type: "text", text: `No pull request #${number} on record.` }], isError: true };
       }
@@ -80,7 +80,7 @@ function buildServer(env: Env): McpServer {
       inputSchema: { number: z.number().int() }
     },
     traced("get_reviews", async ({ number }) => {
-      const pr = await resolvePullRequest(env, number);
+      const pr = await getPullRequest(env, number);
       if (!pr) {
         return { content: [{ type: "text", text: `No pull request #${number} on record.` }], isError: true };
       }
@@ -96,7 +96,7 @@ function buildServer(env: Env): McpServer {
       inputSchema: { number: z.number().int() }
     },
     traced("get_commits", async ({ number }) => {
-      const pr = await resolvePullRequest(env, number);
+      const pr = await getPullRequest(env, number);
       if (!pr) {
         return { content: [{ type: "text", text: `No pull request #${number} on record.` }], isError: true };
       }
@@ -112,11 +112,12 @@ function buildServer(env: Env): McpServer {
       inputSchema: { number: z.number().int() }
     },
     traced("get_diff", async ({ number }) => {
-      const pr = await resolvePullRequest(env, number);
+      const pr = await getPullRequest(env, number);
       if (!pr) {
         return { content: [{ type: "text", text: `No pull request #${number} on record.` }], isError: true };
       }
-      const diff = pr.diff_text ?? pr.diff_summary.map((d) => `${d.path} (+${d.additions}/-${d.deletions})`).join("\n");
+      const diff =
+        pr.diff_text ?? pr.diff_summary.map((d: { path: string; additions: number; deletions: number }) => `${d.path} (+${d.additions}/-${d.deletions})`).join("\n");
       return { content: [{ type: "text", text: diff }] };
     })
   );
@@ -129,7 +130,7 @@ function buildServer(env: Env): McpServer {
       inputSchema: { query: z.string().min(1) }
     },
     traced("search_code", async ({ query }) => {
-      const results = searchCode(query);
+      const results = await searchCode(env, query);
       return { content: [{ type: "text", text: JSON.stringify(results, null, 2) }] };
     })
   );

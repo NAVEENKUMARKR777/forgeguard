@@ -1,74 +1,185 @@
-import pr1842 from "../fixtures/pull-requests/pr-1842.json";
-import paymentService from "../fixtures/services/payment-service.json";
-import { fetchLivePullRequest } from "./github-live";
-import type { CommitEntry, DiffEntry, PullRequest, ReviewEntry, ServiceMeta } from "./types";
+import type { CommitEntry, DiffEntry, OpenPullRequest, PullRequest, PullRequestCheck, ReviewEntry, ServiceMeta } from "./types";
 
-/**
- * Fixture-backed stand-in for a GitHub MCP server. Same call shapes a real
- * `get_pull_request` / `get_pull_request_files` / `get_reviews` /
- * `get_commits` / `get_diff` / `search_code` MCP tool would have — swapping
- * this module for a live MCP client is the only change a real integration
- * needs (see docs/decisions/ADR-002-mcp-vs-direct-tools.md).
- */
-const PULL_REQUESTS: Record<number, PullRequest> = {
-  1842: pr1842 as PullRequest
+const GITHUB_API = "https://api.github.com";
+
+interface GhFile {
+  filename: string;
+  additions: number;
+  deletions: number;
+}
+interface GhReview {
+  user?: { login?: string };
+  state: string;
+  body?: string;
+}
+interface GhCommit {
+  sha: string;
+  commit: { message: string; author?: { name?: string } };
+  author?: { login?: string };
+}
+interface GhCheckRun {
+  name: string;
+  status: string;
+  conclusion: string | null;
+}
+interface GhPullRequest {
+  number: number;
+  title: string;
+  user?: { login?: string };
+  changed_files?: number;
+  head: { sha: string };
+  updated_at: string;
+}
+
+const FORGEGUARD_SERVICE: ServiceMeta = {
+  id: "forgeguard",
+  owner: "NAVEENKUMARKR777",
+  criticality: "medium",
+  repository: "NAVEENKUMARKR777/forgeguard",
+  deployment_strategy: "direct",
+  common_failure_modes: ["Workers AI model unavailable", "D1 migration mismatch"],
+  previous_incidents: []
 };
 
-const SERVICES: Record<string, ServiceMeta> = {
-  "payment-service": paymentService as ServiceMeta
-};
+function repoTarget(env: Env): string {
+  return env.GITHUB_REPO || "NAVEENKUMARKR777/forgeguard";
+}
 
-export function getPullRequest(number: number): PullRequest | null {
-  return PULL_REQUESTS[number] ?? null;
+async function githubGet<T>(env: Env, path: string): Promise<T | null> {
+  const res = await fetch(`${GITHUB_API}${path}`, {
+    headers: {
+      authorization: `token ${env.GITHUB_TOKEN}`,
+      accept: "application/vnd.github+json",
+      "user-agent": "forgeguard"
+    }
+  });
+  if (!res.ok) return null;
+  return (await res.json()) as T;
+}
+
+function mapCheckRun(run: GhCheckRun): PullRequestCheck {
+  const status = run.status !== "completed" ? "pending" : run.conclusion === "success" ? "passed" : "failed";
+  return { name: run.name, status, detail: status === "failed" ? (run.conclusion ?? undefined) : undefined };
+}
+
+function mapReview(review: GhReview): ReviewEntry {
+  const state =
+    review.state === "APPROVED" ? "approved" : review.state === "CHANGES_REQUESTED" ? "changes_requested" : "commented";
+  return { reviewer: review.user?.login ?? "unknown", state, comment: review.body ?? "" };
+}
+
+function mapCommit(commit: GhCommit): CommitEntry {
+  return {
+    sha: commit.sha.slice(0, 7),
+    message: commit.commit.message.split("\n")[0],
+    author: commit.author?.login ?? commit.commit.author?.name ?? "unknown"
+  };
 }
 
 /**
- * Fixture first, real GitHub API second. Keeps the demo PR (#1842)
- * instant and deterministic while letting any other PR number resolve
- * against the real repo when `GITHUB_TOKEN` is configured — see
- * mcp/github-live.ts and ADR-002.
+ * Real GitHub REST API client for `NAVEENKUMARKR777/forgeguard` (or
+ * whatever `GITHUB_REPO` names) — no fixtures, no offline fallback. Every
+ * function returns null on any failure (missing token, 404, rate limit)
+ * rather than throwing, so callers can render "not found" instead of a
+ * crash. See docs/decisions/ADR-002-mcp-vs-direct-tools.md for how this
+ * module used to be fixture-backed and why that's no longer the design.
  */
-export async function resolvePullRequest(
-  env: { GITHUB_TOKEN?: string; GITHUB_REPO?: string },
-  number: number
-): Promise<PullRequest | null> {
-  return getPullRequest(number) ?? fetchLivePullRequest(env, number);
+export async function getPullRequest(env: Env, number: number): Promise<PullRequest | null> {
+  if (!env.GITHUB_TOKEN) return null;
+  const repo = repoTarget(env);
+
+  const pr = await githubGet<GhPullRequest>(env, `/repos/${repo}/pulls/${number}`);
+  if (!pr) return null;
+
+  const [files, reviews, commits, checkRunsRes] = await Promise.all([
+    githubGet<GhFile[]>(env, `/repos/${repo}/pulls/${number}/files?per_page=100`),
+    githubGet<GhReview[]>(env, `/repos/${repo}/pulls/${number}/reviews`),
+    githubGet<GhCommit[]>(env, `/repos/${repo}/pulls/${number}/commits`),
+    githubGet<{ check_runs: GhCheckRun[] }>(env, `/repos/${repo}/commits/${pr.head.sha}/check-runs`)
+  ]);
+
+  const fileList = files ?? [];
+  const diff_summary: DiffEntry[] = fileList.map((f) => ({
+    path: f.filename,
+    additions: f.additions,
+    deletions: f.deletions
+  }));
+
+  return {
+    number: pr.number,
+    title: pr.title,
+    service: repo.split("/")[1] ?? "unknown",
+    author: pr.user?.login ?? "unknown",
+    headSha: pr.head.sha,
+    files_changed: pr.changed_files ?? fileList.length,
+    diff_summary,
+    checks: (checkRunsRes?.check_runs ?? []).map(mapCheckRun),
+    test_coverage_delta: 0,
+    touches_production_config: fileList.some((f) => /production/i.test(f.filename)),
+    touches_database_migration: fileList.some((f) => /migrations?\//i.test(f.filename)),
+    commits: (commits ?? []).map(mapCommit),
+    reviews: (reviews ?? []).map(mapReview)
+  };
 }
 
+/** The single real service this app describes — static facts about how
+ * this actual repo is deployed, not fixture demo data. Returns null for
+ * any other id, same "unknown service" semantics the old fixture map had. */
 export function getService(id: string): ServiceMeta | null {
-  return SERVICES[id] ?? null;
+  return id === FORGEGUARD_SERVICE.id ? FORGEGUARD_SERVICE : null;
 }
 
-export function getPullRequestFiles(number: number): DiffEntry[] | null {
-  return getPullRequest(number)?.diff_summary ?? null;
+export async function getPullRequestFiles(env: Env, number: number): Promise<DiffEntry[] | null> {
+  return (await getPullRequest(env, number))?.diff_summary ?? null;
 }
 
-export function getReviews(number: number): ReviewEntry[] | null {
-  const pr = getPullRequest(number);
+export async function getReviews(env: Env, number: number): Promise<ReviewEntry[] | null> {
+  const pr = await getPullRequest(env, number);
   if (!pr) return null;
   return pr.reviews ?? [];
 }
 
-export function getCommits(number: number): CommitEntry[] | null {
-  const pr = getPullRequest(number);
+export async function getCommits(env: Env, number: number): Promise<CommitEntry[] | null> {
+  const pr = await getPullRequest(env, number);
   if (!pr) return null;
   return pr.commits ?? [];
 }
 
-export function getDiff(number: number): string | null {
-  const pr = getPullRequest(number);
+export async function getDiff(env: Env, number: number): Promise<string | null> {
+  const pr = await getPullRequest(env, number);
   if (!pr) return null;
   return pr.diff_text ?? pr.diff_summary.map((d) => `${d.path} (+${d.additions}/-${d.deletions})`).join("\n");
 }
 
-/** Substring search over changed file paths across every known PR fixture. */
-export function searchCode(query: string): { prNumber: number; path: string }[] {
+/** Real open pull requests on the repo — powers the dashboard's live
+ * sidebar list (polled, see apps/dashboard/src/hooks/useOpenPullRequests.ts). */
+export async function fetchOpenPullRequests(env: Env): Promise<OpenPullRequest[]> {
+  if (!env.GITHUB_TOKEN) return [];
+  const repo = repoTarget(env);
+  const prs = await githubGet<GhPullRequest[]>(env, `/repos/${repo}/pulls?state=open&per_page=20`);
+  return (prs ?? []).map((pr) => ({
+    number: pr.number,
+    title: pr.title,
+    author: pr.user?.login ?? "unknown",
+    headSha: pr.head.sha,
+    updatedAt: pr.updated_at
+  }));
+}
+
+/** Substring search over changed file paths across currently open pull
+ * requests — the real equivalent of the old "search across every known PR
+ * fixture" (real code search over the whole repo needs a different,
+ * separately-rate-limited endpoint and returns file content matches, not
+ * this "which open PR touches this path" question). */
+export async function searchCode(env: Env, query: string): Promise<{ prNumber: number; path: string }[]> {
   const normalized = query.toLowerCase();
+  const openPrs = await fetchOpenPullRequests(env);
   const results: { prNumber: number; path: string }[] = [];
-  for (const pr of Object.values(PULL_REQUESTS)) {
-    for (const entry of pr.diff_summary) {
+  for (const summary of openPrs) {
+    const files = await getPullRequestFiles(env, summary.number);
+    for (const entry of files ?? []) {
       if (entry.path.toLowerCase().includes(normalized)) {
-        results.push({ prNumber: pr.number, path: entry.path });
+        results.push({ prNumber: summary.number, path: entry.path });
       }
     }
   }

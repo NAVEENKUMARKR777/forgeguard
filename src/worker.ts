@@ -2,6 +2,7 @@ import { routeAgentRequest } from "agents";
 import { mcpFetch } from "../mcp/server";
 import { productivityFetch } from "../productivity/api";
 import { evalHistoryFetch } from "../evals/history-api";
+import { fetchOpenPullRequests } from "../mcp/github";
 
 export { SessionAgent } from "../agents/session-agent";
 export { ReleaseWorkflow } from "../workflows/release-workflow";
@@ -18,10 +19,14 @@ export default {
     // Note: bare /productivity and bare /evals are the React pages (fall
     // through to ASSETS below); only their API sub-paths are handled here.
     if (url.pathname.startsWith("/productivity/")) {
-      return productivityFetch(request);
+      return productivityFetch(request, env);
     }
     if (url.pathname.startsWith("/evals/runs") || url.pathname.startsWith("/evals/compare")) {
       return evalHistoryFetch(request, env);
+    }
+    if (url.pathname === "/pull-requests") {
+      const prs = await fetchOpenPullRequests(env);
+      return new Response(JSON.stringify(prs), { headers: { "content-type": "application/json" } });
     }
 
     const agentResponse = await routeAgentRequest(request, env);

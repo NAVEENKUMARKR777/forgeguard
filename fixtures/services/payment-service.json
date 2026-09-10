@@ -1,9 +1,0 @@
-{
-  "id": "payment-service",
-  "owner": "payments-team",
-  "criticality": "high",
-  "repository": "acme/payment-service",
-  "deployment_strategy": "canary",
-  "common_failure_modes": ["timeout", "connection pool exhaustion"],
-  "previous_incidents": ["INC-1042"]
-}

@@ -52,9 +52,9 @@ export async function investigateViaCodeMode(
   const provider = resolveProvider({
     name: "tools",
     tools: {
-      getPullRequest: { execute: async (prNumberArg: unknown) => getPullRequest(prNumberArg as number) },
+      getPullRequest: { execute: async (prNumberArg: unknown) => getPullRequest(env, prNumberArg as number) },
       getService: { execute: async (serviceId: unknown) => getService(serviceId as string) },
-      getPipeline: { execute: async (prNumberArg: unknown) => getPipeline(prNumberArg as number) },
+      getPipeline: { execute: async (prNumberArg: unknown) => getPipeline(env, prNumberArg as number) },
       getIncidents: {
         execute: async (serviceId: unknown) => engineeringMemoryStub(env).getIncidentsForService(serviceId as string)
       }

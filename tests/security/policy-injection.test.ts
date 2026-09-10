@@ -10,12 +10,12 @@ function pr(overrides: Partial<PullRequest>): PullRequest {
     title: "test",
     service: "svc",
     author: "test",
+    headSha: "abc1234",
     files_changed: 1,
     diff_summary: [],
     checks: [
-      { name: "unit-tests", status: "passed" },
-      { name: "integration-tests", status: "passed" },
-      { name: "security-scan", status: "passed" }
+      { name: "e2e", status: "passed" },
+      { name: "verify", status: "passed" }
     ],
     test_coverage_delta: 0,
     touches_production_config: false,

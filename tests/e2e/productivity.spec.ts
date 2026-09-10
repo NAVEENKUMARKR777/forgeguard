@@ -15,24 +15,22 @@ test("productivity: bare path is always the SPA, never the JSON API", async ({ r
   expect(res.headers()["content-type"]).toContain("text/html");
 });
 
-test("productivity: renders real aggregated metrics, labeled as synthetic", async ({ page }) => {
+test("productivity: renders real metrics for this repo, labeled as live", async ({ page }) => {
   const errors: string[] = [];
   page.on("pageerror", (err) => errors.push(err.message));
 
   await page.goto("/productivity");
   await expect(page.locator("text=Development")).toBeVisible({ timeout: 10_000 });
   await expect(page.locator("text=CI/CD")).toBeVisible();
-  await expect(page.locator("text=/AI .* agent activity/")).toBeVisible();
   await expect(page.locator("text=Reliability")).toBeVisible();
 
-  // The honesty label from productivity/metrics.ts's source: "fixture" must
-  // be visible, not just present in a data attribute — this is the exact
-  // guarantee ADR-012 is about.
-  await expect(page.locator("text=synthetic fixture data")).toBeVisible();
+  // The honesty label from productivity/metrics.ts's source: "live" must be
+  // visible, not just present in a data attribute — this is the exact
+  // guarantee ADR-012 is about, now pointed at real data instead of fixtures.
+  await expect(page.locator("text=live GitHub data")).toBeVisible();
 
-  // Switching service/window should re-fetch without erroring.
-  await page.selectOption("select >> nth=0", "checkout-service");
-  await page.selectOption("select >> nth=1", "7d");
+  // Switching window should re-fetch without erroring.
+  await page.selectOption("select", "7d");
   await page.waitForTimeout(500);
 
   expect(errors).toEqual([]);

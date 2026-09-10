@@ -27,6 +27,7 @@ export interface PullRequest {
   title: string;
   service: string;
   author: string;
+  headSha: string;
   files_changed: number;
   diff_summary: DiffEntry[];
   checks: PullRequestCheck[];
@@ -67,7 +68,15 @@ export interface Pipeline {
   };
 }
 
-export interface IncidentFixture {
+export interface OpenPullRequest {
+  number: number;
+  title: string;
+  author: string;
+  headSha: string;
+  updatedAt: string;
+}
+
+export interface IncidentRecord {
   id: string;
   service: string;
   cause: string;

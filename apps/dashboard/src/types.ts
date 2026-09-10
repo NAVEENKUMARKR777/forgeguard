@@ -10,6 +10,14 @@ export interface ChatMessage {
   ts: number;
 }
 
+export interface OpenPullRequest {
+  number: number;
+  title: string;
+  author: string;
+  headSha: string;
+  updatedAt: string;
+}
+
 export type RiskBand = "LOW" | "MEDIUM" | "HIGH" | "CRITICAL";
 
 export interface RiskComponent {
@@ -37,7 +45,7 @@ export interface Investigation {
   risk: RiskAssessment;
   policy: PolicyDecision;
   workflowInstanceId?: string;
-  status: "analyzed" | "workflow_running" | "waiting_approval" | "resolved";
+  status: "analyzed" | "workflow_running" | "waiting_approval" | "resolved" | "merged" | "closed";
 }
 
 export interface PendingApproval {
@@ -74,13 +82,11 @@ export interface ProductivityBucket {
 }
 
 export interface ProductivitySnapshot {
-  service: string;
   windowDays: number;
-  source: "fixture";
+  source: "live";
   development: {
     prThroughput: number;
     avgCycleTimeHours: number;
-    avgReviewTimeHours: number;
     avgFilesChangedPerPr: number;
     avgCommitsPerPr: number;
   };
@@ -90,20 +96,8 @@ export interface ProductivitySnapshot {
     deploymentSuccessRate: number;
     rollbackFrequencyPerWeek: number;
   };
-  ai: {
-    agentInvestigations: number;
-    toolInvocations: number;
-    recommendations: number;
-    approvalRequests: number;
-    policyDenials: number;
-    remediationAttempts: number;
-    successfulRemediations: number;
-    automatedRemediationSuccessRate: number;
-  };
   reliability: {
     incidentFrequencyPerWeek: number;
-    meanTimeToDetectionMinutes: number;
-    meanTimeToRecoveryMinutes: number;
   };
   buckets: ProductivityBucket[];
 }

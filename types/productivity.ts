@@ -1,27 +1,18 @@
 export interface DailyMetricRow {
   date: string; // YYYY-MM-DD
-  service: string;
   deployments: number;
   deploymentFailures: number;
   rollbacks: number;
   incidents: number;
-  avgDetectionMinutes: number;
-  avgRecoveryMinutes: number;
   prsOpened: number;
   prsMerged: number;
-  avgCycleHours: number;
-  avgReviewHours: number;
-  avgFilesChanged: number;
-  avgCommitsPerPr: number;
+  /** Sum, not average — divide by prsMerged when aggregating across a
+   * window, since a single day's "average" is meaningless with 0-1 PRs. */
+  cycleHoursSum: number;
+  filesChangedSum: number;
+  commitsSum: number;
   ciRuns: number;
   ciFailures: number;
-  agentInvestigations: number;
-  toolInvocations: number;
-  recommendations: number;
-  approvalRequests: number;
-  policyDenials: number;
-  remediationAttempts: number;
-  successfulRemediations: number;
 }
 
 export type ProductivityWindow = 7 | 30 | 90;
@@ -36,15 +27,14 @@ export interface ProductivityBucket {
 }
 
 export interface ProductivitySnapshot {
-  service: string;
   windowDays: ProductivityWindow;
-  /** Always "fixture" here — see productivity/fixtures.ts. Never presented
-   * as live telemetry anywhere in the UI or API. */
-  source: "fixture";
+  /** Real GitHub PR/Actions history and real incident memory — see
+   * productivity/fixtures.ts. A young, low-traffic repo will show mostly
+   * zero-activity days; that's honest, not a bug. */
+  source: "live";
   development: {
     prThroughput: number;
     avgCycleTimeHours: number;
-    avgReviewTimeHours: number;
     avgFilesChangedPerPr: number;
     avgCommitsPerPr: number;
   };
@@ -54,20 +44,8 @@ export interface ProductivitySnapshot {
     deploymentSuccessRate: number;
     rollbackFrequencyPerWeek: number;
   };
-  ai: {
-    agentInvestigations: number;
-    toolInvocations: number;
-    recommendations: number;
-    approvalRequests: number;
-    policyDenials: number;
-    remediationAttempts: number;
-    successfulRemediations: number;
-    automatedRemediationSuccessRate: number;
-  };
   reliability: {
     incidentFrequencyPerWeek: number;
-    meanTimeToDetectionMinutes: number;
-    meanTimeToRecoveryMinutes: number;
   };
   buckets: ProductivityBucket[];
 }

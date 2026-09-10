@@ -8,13 +8,32 @@
       "author": "test",
       "files_changed": 3,
       "diff_summary": [],
-      "checks": [{ "name": "integration-tests", "status": "failed", "detail": "timeout" }],
+      "checks": [
+        {
+          "name": "verify",
+          "status": "failed",
+          "detail": "timeout"
+        }
+      ],
       "test_coverage_delta": 0,
       "touches_production_config": false,
-      "touches_database_migration": false
+      "touches_database_migration": false,
+      "headSha": "abc1234"
     },
-    "policy": { "policyName": "production", "approvalRequired": false, "violations": [], "reasons": [] },
-    "expected": { "mustContain": ["integration-tests"], "mustNotContain": ["approval"] }
+    "policy": {
+      "policyName": "production",
+      "approvalRequired": false,
+      "violations": [],
+      "reasons": []
+    },
+    "expected": {
+      "mustContain": [
+        "verify"
+      ],
+      "mustNotContain": [
+        "approval"
+      ]
+    }
   },
   {
     "name": "migration-produces-a-separate-deploy-step",
@@ -28,10 +47,23 @@
       "checks": [],
       "test_coverage_delta": 0,
       "touches_production_config": false,
-      "touches_database_migration": true
+      "touches_database_migration": true,
+      "headSha": "abc1234"
     },
-    "policy": { "policyName": "production", "approvalRequired": false, "violations": [], "reasons": [] },
-    "expected": { "mustContain": ["migration"], "mustNotContain": ["approval"] }
+    "policy": {
+      "policyName": "production",
+      "approvalRequired": false,
+      "violations": [],
+      "reasons": []
+    },
+    "expected": {
+      "mustContain": [
+        "migration"
+      ],
+      "mustNotContain": [
+        "approval"
+      ]
+    }
   },
   {
     "name": "approval-required-produces-an-approval-step",
@@ -45,10 +77,23 @@
       "checks": [],
       "test_coverage_delta": 0,
       "touches_production_config": true,
-      "touches_database_migration": false
+      "touches_database_migration": false,
+      "headSha": "abc1234"
     },
-    "policy": { "policyName": "production", "approvalRequired": true, "violations": [], "reasons": ["production configuration change detected"] },
-    "expected": { "mustContain": ["approval"], "mustNotContain": [] }
+    "policy": {
+      "policyName": "production",
+      "approvalRequired": true,
+      "violations": [],
+      "reasons": [
+        "production configuration change detected"
+      ]
+    },
+    "expected": {
+      "mustContain": [
+        "approval"
+      ],
+      "mustNotContain": []
+    }
   },
   {
     "name": "clean-pr-always-still-recommends-canary",
@@ -62,9 +107,23 @@
       "checks": [],
       "test_coverage_delta": 0,
       "touches_production_config": false,
-      "touches_database_migration": false
+      "touches_database_migration": false,
+      "headSha": "abc1234"
     },
-    "policy": { "policyName": "production", "approvalRequired": false, "violations": [], "reasons": [] },
-    "expected": { "mustContain": ["canary"], "mustNotContain": ["approval", "migration"] }
+    "policy": {
+      "policyName": "production",
+      "approvalRequired": false,
+      "violations": [],
+      "reasons": []
+    },
+    "expected": {
+      "mustContain": [
+        "canary"
+      ],
+      "mustNotContain": [
+        "approval",
+        "migration"
+      ]
+    }
   }
 ]

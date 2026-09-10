@@ -1,4 +1,5 @@
-import { getService, resolvePullRequest } from "../mcp/github";
+import { getService, getPullRequest } from "../mcp/github";
+import { mergePullRequest as ghMergePullRequest, closePullRequest as ghClosePullRequest } from "../mcp/github-write";
 import { getPipeline } from "../mcp/cicd";
 import { assessRisk, type RiskAssessment } from "../risk/engine";
 import { evaluatePolicy, type PolicyDecision } from "../policy/engine";
@@ -42,10 +43,10 @@ async function gatherEvidence(
 
   // Direct-call fallback — always available, used whenever Code Mode isn't
   // configured/reachable. See agents/codemode-investigate.ts.
-  const pr = await resolvePullRequest(env, prNumber);
+  const pr = await getPullRequest(env, prNumber);
   if (!pr) return null;
   const service = getService(pr.service);
-  const pipeline = getPipeline(prNumber);
+  const pipeline = await getPipeline(env, prNumber);
   const incidents = service ? await engineeringMemoryStub(env).getIncidentsForService(service.id) : [];
   return { pr, service, pipeline, incidents };
 }
@@ -55,14 +56,14 @@ export async function analyzeRelease(ctx: AgentContext, prNumber: number): Promi
   const evidence = await gatherEvidence(ctx.env, prNumber);
   if (!evidence) {
     ctx.emitStep("fetch-evidence", "error");
-    ctx.send(`I couldn't find PR #${prNumber} — not in the fixture set, and no live GitHub match either.`);
+    ctx.send(`I couldn't find PR #${prNumber} on ${ctx.env.GITHUB_REPO || "the configured repo"}.`);
     return;
   }
   const { pr, service, pipeline, incidents } = evidence;
   ctx.emitStep("fetch-evidence", "done");
 
   ctx.emitStep("fetch-gitops", "running");
-  const gitopsState = getGitOpsState(pr.service);
+  const gitopsState = await getGitOpsState(ctx.env);
   const gitopsDrift = gitopsState ? detectDrift(gitopsState) : null;
   ctx.emitStep("fetch-gitops", "done");
 
@@ -117,7 +118,7 @@ export async function proposeRemediation(ctx: AgentContext): Promise<void> {
     ctx.send("I haven't analyzed a PR yet in this session — ask me to analyze one first.");
     return;
   }
-  const pr = await resolvePullRequest(ctx.env, investigation.prNumber);
+  const pr = await getPullRequest(ctx.env, investigation.prNumber);
   const steps = buildRemediationPlan(pr, investigation.policy);
   ctx.send(`Recommended remediation for PR #${investigation.prNumber}:\n${steps.map((s, i) => `${i + 1}. ${s}`).join("\n")}`);
 }
@@ -226,13 +227,10 @@ async function maybeStartRemediation(ctx: AgentContext, releaseInstanceId: strin
   if (!investigation || !result?.prNumber) return;
   if (result.outcome === "rejected" || result.outcome === "policy_violation") return;
 
-  const pr = await resolvePullRequest(ctx.env, investigation.prNumber);
-  if (!pr) return;
   const { instance, reused } = await createIdempotent(ctx.env.REMEDIATION_WORKFLOW, `remediation-${investigation.prNumber}`, {
-    prNumber: investigation.prNumber,
-    service: pr.service
+    prNumber: investigation.prNumber
   });
-  if (reused) return; // already rolling out — don't re-announce or re-audit a duplicate trigger
+  if (reused) return; // already checking — don't re-announce or re-audit a duplicate trigger
   recordAuditEvent(ctx.sql, {
     requestId: ctx.requestId,
     sessionId: ctx.sessionId,
@@ -241,7 +239,53 @@ async function maybeStartRemediation(ctx: AgentContext, releaseInstanceId: strin
     action: "start_remediation",
     detail: { releaseInstanceId }
   });
-  ctx.send(`Deployment approved — remediation workflow ${instance.id} is rolling it out via canary.`);
+  ctx.send(
+    `Deployment approved — remediation workflow ${instance.id} is waiting for real CI to finish on this PR. Once it's ready, say "merge this pr" or "close this pr" to decide.`
+  );
+}
+
+export async function mergePullRequest(ctx: AgentContext): Promise<void> {
+  const investigation = ctx.getState().activeInvestigation;
+  if (!investigation) {
+    ctx.send("I haven't analyzed a PR yet in this session — ask me to analyze one first.");
+    return;
+  }
+  const result = await ghMergePullRequest(ctx.env, investigation.prNumber);
+  recordAuditEvent(ctx.sql, {
+    requestId: ctx.requestId,
+    sessionId: ctx.sessionId,
+    actor: "user",
+    action: "merge_pull_request",
+    detail: { prNumber: investigation.prNumber, ok: result.ok, message: result.message }
+  });
+  if (result.ok) {
+    updateInvestigation(ctx, { status: "merged" });
+    ctx.send(`PR #${investigation.prNumber} merged.`);
+  } else {
+    ctx.send(`Couldn't merge PR #${investigation.prNumber}: ${result.message}`);
+  }
+}
+
+export async function closePullRequest(ctx: AgentContext): Promise<void> {
+  const investigation = ctx.getState().activeInvestigation;
+  if (!investigation) {
+    ctx.send("I haven't analyzed a PR yet in this session — ask me to analyze one first.");
+    return;
+  }
+  const result = await ghClosePullRequest(ctx.env, investigation.prNumber);
+  recordAuditEvent(ctx.sql, {
+    requestId: ctx.requestId,
+    sessionId: ctx.sessionId,
+    actor: "user",
+    action: "close_pull_request",
+    detail: { prNumber: investigation.prNumber, ok: result.ok, message: result.message }
+  });
+  if (result.ok) {
+    updateInvestigation(ctx, { status: "closed" });
+    ctx.send(`PR #${investigation.prNumber} closed.`);
+  } else {
+    ctx.send(`Couldn't close PR #${investigation.prNumber}: ${result.message}`);
+  }
 }
 
 function markWaitingForApproval(ctx: AgentContext): void {

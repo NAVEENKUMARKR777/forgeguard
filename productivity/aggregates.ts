@@ -1,16 +1,11 @@
-import { DAILY_METRICS } from "./fixtures";
 import type { DailyMetricRow, ProductivityBucket, ProductivityGranularity, ProductivityWindow } from "../types/productivity";
 
-/** Rows for one service (or every service, aggregated per day, if `service` is "all") within the last `windowDays`. */
-export function rowsInWindow(service: string, windowDays: ProductivityWindow): DailyMetricRow[] {
-  const cutoff = new Date(DAILY_METRICS[0]?.date ?? Date.now());
-  // windowDays=7 means 7 calendar days total, today included — so the
-  // cutoff is windowDays-1 back, not windowDays back (which would be 8
-  // inclusive days and quietly overcount every window by one).
+/** Rows within the last `windowDays` (today included). */
+export function rowsInWindow(rows: DailyMetricRow[], windowDays: ProductivityWindow): DailyMetricRow[] {
+  const cutoff = new Date();
   cutoff.setUTCDate(cutoff.getUTCDate() - (windowDays - 1));
   const cutoffStr = cutoff.toISOString().slice(0, 10);
-
-  return DAILY_METRICS.filter((row) => row.date >= cutoffStr && (service === "all" || row.service === service));
+  return rows.filter((row) => row.date >= cutoffStr);
 }
 
 function isoWeekStart(dateStr: string): string {
@@ -41,7 +36,11 @@ export function sum(rows: DailyMetricRow[], field: keyof DailyMetricRow): number
   return rows.reduce((total, row) => total + (row[field] as number), 0);
 }
 
-export function average(rows: DailyMetricRow[], field: keyof DailyMetricRow): number {
-  if (rows.length === 0) return 0;
-  return Math.round((sum(rows, field) / rows.length) * 10) / 10;
+export function ratio(numerator: number, denominator: number): number {
+  if (denominator === 0) return 0;
+  return Math.round((numerator / denominator) * 1000) / 1000;
+}
+
+export function perWeek(total: number, windowDays: number): number {
+  return Math.round((total / windowDays) * 7 * 10) / 10;
 }

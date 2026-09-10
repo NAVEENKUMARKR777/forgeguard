@@ -1,6 +1,6 @@
 {
-  "ranAt": "2026-09-09T08:51:44.953Z",
-  "passed": 23,
+  "ranAt": "2026-09-10T13:28:38.336Z",
+  "passed": 22,
   "failed": 0,
   "results": [
     {
@@ -67,7 +67,7 @@
       "suite": "policy",
       "name": "missing-required-check",
       "ok": true,
-      "detail": "got approvalRequired=true violations=[\"required checks not passing: security-scan\"]"
+      "detail": "got approvalRequired=true violations=[\"required checks not passing: verify\"]"
     },
     {
       "suite": "policy",
@@ -79,7 +79,7 @@
       "suite": "memory",
       "name": "remember-then-recall canary fact",
       "ok": true,
-      "detail": "got [{\"id\":\"ac770ae1-fb8f-4226-8277-f1c57b2aad3e\",\"service\":\"payment-service\",\"note\":\"uses canary deployment\",\"created_at\":1788943904952}]"
+      "detail": "got [{\"id\":\"7b079e0b-cafe-42d4-8088-680c79320c7c\",\"service\":\"payment-service\",\"note\":\"uses canary deployment\",\"created_at\":1789046918336}]"
     },
     {
       "suite": "memory",
@@ -115,7 +115,7 @@
       "suite": "remediation",
       "name": "failing-check-produces-a-fix-step",
       "ok": true,
-      "detail": "got plan=[\"Fix and re-run \\\"integration-tests\\\" (timeout)\",\"Deploy via canary and monitor error rate before full rollout\"]"
+      "detail": "got plan=[\"Fix and re-run \\\"verify\\\" (timeout)\",\"Deploy via canary and monitor error rate before full rollout\"]"
     },
     {
       "suite": "remediation",
@@ -134,12 +134,6 @@
       "name": "clean-pr-always-still-recommends-canary",
       "ok": true,
       "detail": "got plan=[\"Deploy via canary and monitor error rate before full rollout\"]"
-    },
-    {
-      "suite": "regression",
-      "name": "pr-1842-matches-baseline",
-      "ok": true,
-      "detail": "got total=64 band=HIGH approvalRequired=true"
     }
   ]
 }

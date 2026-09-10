@@ -7,17 +7,32 @@
       "service": "identity-service",
       "author": "s.kim",
       "files_changed": 3,
-      "diff_summary": [{ "path": "auth/keys/signing.ts", "additions": 10, "deletions": 2 }],
+      "diff_summary": [
+        {
+          "path": "auth/keys/signing.ts",
+          "additions": 10,
+          "deletions": 2
+        }
+      ],
       "checks": [
-        { "name": "unit-tests", "status": "passed" },
-        { "name": "integration-tests", "status": "passed" },
-        { "name": "security-scan", "status": "passed" }
+        {
+          "name": "e2e",
+          "status": "passed"
+        },
+        {
+          "name": "verify",
+          "status": "passed"
+        }
       ],
       "test_coverage_delta": 0,
       "touches_production_config": false,
-      "touches_database_migration": false
+      "touches_database_migration": false,
+      "headSha": "abc1234"
     },
-    "expected": { "approvalRequired": true, "hasViolation": true }
+    "expected": {
+      "approvalRequired": true,
+      "hasViolation": true
+    }
   },
   {
     "name": "too-many-files-changed",
@@ -29,15 +44,24 @@
       "files_changed": 140,
       "diff_summary": [],
       "checks": [
-        { "name": "unit-tests", "status": "passed" },
-        { "name": "integration-tests", "status": "passed" },
-        { "name": "security-scan", "status": "passed" }
+        {
+          "name": "e2e",
+          "status": "passed"
+        },
+        {
+          "name": "verify",
+          "status": "passed"
+        }
       ],
       "test_coverage_delta": 0,
       "touches_production_config": false,
-      "touches_database_migration": false
+      "touches_database_migration": false,
+      "headSha": "abc1234"
     },
-    "expected": { "approvalRequired": true, "hasViolation": true }
+    "expected": {
+      "approvalRequired": true,
+      "hasViolation": true
+    }
   },
   {
     "name": "missing-required-check",
@@ -49,14 +73,20 @@
       "files_changed": 4,
       "diff_summary": [],
       "checks": [
-        { "name": "unit-tests", "status": "passed" },
-        { "name": "integration-tests", "status": "passed" }
+        {
+          "name": "e2e",
+          "status": "passed"
+        }
       ],
       "test_coverage_delta": 0,
       "touches_production_config": false,
-      "touches_database_migration": false
+      "touches_database_migration": false,
+      "headSha": "abc1234"
     },
-    "expected": { "approvalRequired": true, "hasViolation": true }
+    "expected": {
+      "approvalRequired": true,
+      "hasViolation": true
+    }
   },
   {
     "name": "clean-pr-no-violations",
@@ -66,16 +96,31 @@
       "service": "checkout-service",
       "author": "a.dev",
       "files_changed": 1,
-      "diff_summary": [{ "path": "src/checkout.ts", "additions": 1, "deletions": 0 }],
+      "diff_summary": [
+        {
+          "path": "src/checkout.ts",
+          "additions": 1,
+          "deletions": 0
+        }
+      ],
       "checks": [
-        { "name": "unit-tests", "status": "passed" },
-        { "name": "integration-tests", "status": "passed" },
-        { "name": "security-scan", "status": "passed" }
+        {
+          "name": "e2e",
+          "status": "passed"
+        },
+        {
+          "name": "verify",
+          "status": "passed"
+        }
       ],
       "test_coverage_delta": 0,
       "touches_production_config": false,
-      "touches_database_migration": false
+      "touches_database_migration": false,
+      "headSha": "abc1234"
     },
-    "expected": { "approvalRequired": false, "hasViolation": false }
+    "expected": {
+      "approvalRequired": false,
+      "hasViolation": false
+    }
   }
 ]

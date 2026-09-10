@@ -12,7 +12,7 @@
     "predeploy": "npm run build:dashboard",
     "deploy": "wrangler deploy",
     "cf-typegen": "wrangler types",
-    "typecheck": "npm run cf-typegen && tsc --noEmit && tsc -p tsconfig.node.json --noEmit && tsc -p apps/dashboard/tsconfig.json --noEmit",
+    "typecheck": "npm run cf-typegen && sleep 1 && tsc --noEmit && tsc -p tsconfig.node.json --noEmit && tsc -p apps/dashboard/tsconfig.json --noEmit",
     "test": "vitest run",
     "test:e2e": "playwright test",
     "evals": "tsx evals/run.ts",

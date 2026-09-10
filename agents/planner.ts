@@ -43,6 +43,12 @@ export async function plan(ctx: AgentContext, text: string): Promise<void> {
       case "remember":
         await handleRemember(ctx, intent.service, intent.note);
         break;
+      case "merge_pr":
+        await releaseAgent.mergePullRequest(ctx);
+        break;
+      case "close_pr":
+        await releaseAgent.closePullRequest(ctx);
+        break;
       case "general":
         await generalChat(ctx, text);
         break;

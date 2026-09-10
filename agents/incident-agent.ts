@@ -8,10 +8,10 @@ import type { AgentContext } from "./types";
 
 const ACTIVE_SYMPTOM_PATTERN = /\b(500s|down|returning errors|failing|outage|degraded)\b/i;
 
-function guessService(ctx: AgentContext): string {
+async function guessService(ctx: AgentContext): Promise<string> {
   const investigation = ctx.getState().activeInvestigation;
-  const fromInvestigation = investigation ? getPullRequest(investigation.prNumber)?.service : undefined;
-  return fromInvestigation ?? "payment-service";
+  const pr = investigation ? await getPullRequest(ctx.env, investigation.prNumber) : null;
+  return pr?.service ?? "forgeguard";
 }
 
 /**
@@ -21,7 +21,7 @@ function guessService(ctx: AgentContext): string {
  * the proposal's "Incident mode").
  */
 export async function investigateIncident(ctx: AgentContext, rawText: string): Promise<void> {
-  const service = guessService(ctx);
+  const service = await guessService(ctx);
   const incidents = await engineeringMemoryStub(ctx.env).getIncidentsForService(service);
 
   if (incidents.length > 0) {
@@ -33,7 +33,7 @@ export async function investigateIncident(ctx: AgentContext, rawText: string): P
     ctx.send(`No prior incidents on record for ${service}.`);
   }
 
-  const gitopsState = getGitOpsState(service);
+  const gitopsState = await getGitOpsState(ctx.env);
   if (gitopsState) {
     const drift = detectDrift(gitopsState);
     ctx.send(`GitOps state for ${service}: ${drift.status} — ${drift.reasons[0]}`);

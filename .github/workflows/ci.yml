@@ -23,7 +23,31 @@ jobs:
       - run: npm run typecheck
       - run: npm run test
       - run: npm run evals
+      # verify:mcp calls the real GitHub API (no fixtures — see ADR-002),
+      # so it needs a real token. The repo-scoped token GitHub injects into
+      # every workflow run is enough (read-only by default); no secret to
+      # configure.
+      - run: echo "GITHUB_TOKEN=${{ secrets.GITHUB_TOKEN }}" > .dev.vars
       - run: npm run verify:mcp
+
+  # Real deploy on every push to master — tags the deployment message with
+  # the commit SHA so gitops/state.ts can compare it against real GitHub
+  # data for the drift-detection risk component (see mcp/cloudflare.ts and
+  # docs/decisions/ADR-009-gitops.md). Needs CLOUDFLARE_API_TOKEN (Account
+  # -> Workers Scripts: Edit) as a repo secret.
+  deploy:
+    needs: verify
+    if: github.ref == 'refs/heads/master' && github.event_name == 'push'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: npm ci
+      - run: npx wrangler deploy --message "$(git rev-parse HEAD)"
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
 
   # Separate job, not a step in `verify` above: a browser plus a live
   # `wrangler dev` instance is a heavier, slower dependency than the rest of

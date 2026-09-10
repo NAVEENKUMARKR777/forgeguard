@@ -1,10 +1,9 @@
 import { writeFileSync } from "node:fs";
-import { fileURLToPath } from "node:url";
+import { join } from "node:path";
 import { assessRisk } from "../risk/engine";
 import { evaluatePolicy, type PolicyDecision } from "../policy/engine";
 import { getProductionPolicy } from "../policy/load-node";
 import { selectTool } from "../mcp/registry";
-import { getPullRequest } from "../mcp/github";
 import { remember, recall } from "../memory/engineering";
 import { createFakeSql } from "./memory/fake-sql";
 import { correlateIncident, rollbackRequiresApproval } from "../incident/correlate";
@@ -17,7 +16,6 @@ import toolCases from "./tool-selection/cases.json";
 import policyCases from "./policy/cases.json";
 import incidentCases from "./incident/cases.json";
 import remediationCases from "./remediation/cases.json";
-import regressionBaseline from "./regression/baseline.json";
 
 interface RiskCase {
   name: string;
@@ -175,31 +173,9 @@ for (const testCase of remediationCases as RemediationCase[]) {
   report("remediation", testCase.name, ok, `got plan=${JSON.stringify(plan)}`);
 }
 
-console.log("\n== regression (locks real fixture output) ==");
-{
-  const pr = getPullRequest(regressionBaseline.prNumber);
-  if (!pr) {
-    report("regression", "pr-1842-fixture-present", false, "fixture missing");
-  } else {
-    const incidents = syntheticIncidents(regressionBaseline.incidentCount, pr.service);
-    const risk = assessRisk({ pr, service: null, pipeline: null, incidents });
-    const policy = evaluatePolicy({ pr, risk }, getProductionPolicy());
-    const ok =
-      risk.total === regressionBaseline.expected.riskTotal &&
-      risk.band === regressionBaseline.expected.riskBand &&
-      policy.approvalRequired === regressionBaseline.expected.approvalRequired;
-    report(
-      "regression",
-      "pr-1842-matches-baseline",
-      ok,
-      `got total=${risk.total} band=${risk.band} approvalRequired=${policy.approvalRequired}`
-    );
-  }
-}
-
 console.log(`\n${passed} passed, ${failed} failed`);
 
-const reportPath = fileURLToPath(new URL("../apps/dashboard/public/eval-results.json", import.meta.url));
+const reportPath = join(import.meta.dirname, "../apps/dashboard/public/eval-results.json");
 writeFileSync(
   reportPath,
   JSON.stringify({ ranAt: new Date().toISOString(), passed, failed, results }, null, 2)

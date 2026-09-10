@@ -10,6 +10,7 @@ function pr(overrides: Partial<PullRequest>): PullRequest {
     title: "test",
     service: "svc",
     author: "test",
+    headSha: "abc1234",
     files_changed: 1,
     diff_summary: [],
     checks: [],
@@ -50,9 +51,8 @@ describe("evaluatePolicy", () => {
   it("does not require approval for a low-risk, fully-passing change", () => {
     const testPr = pr({
       checks: [
-        { name: "unit-tests", status: "passed" },
-        { name: "integration-tests", status: "passed" },
-        { name: "security-scan", status: "passed" }
+        { name: "e2e", status: "passed" },
+        { name: "verify", status: "passed" }
       ]
     });
     const risk = assessRisk({ pr: testPr, service: null, pipeline: null, incidents: [] });

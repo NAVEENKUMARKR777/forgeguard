@@ -1,9 +1,9 @@
 import { describe, expect, it } from "vitest";
 import { readFileSync } from "node:fs";
-import { fileURLToPath } from "node:url";
+import { join } from "node:path";
 import { TOOL_REGISTRY, getToolMetadata } from "../../mcp/tool-metadata";
 
-const serverSource = readFileSync(fileURLToPath(new URL("../../mcp/server.ts", import.meta.url)), "utf-8");
+const serverSource = readFileSync(join(import.meta.dirname, "../../mcp/server.ts"), "utf-8");
 
 const FORBIDDEN_TOOL_NAME_PATTERN = /registerTool\(\s*"(deploy|promote|rollback|restart|delete|write|execute|run_command|shell)/i;
 

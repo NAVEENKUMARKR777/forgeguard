@@ -4,9 +4,8 @@ policies:
   production:
     max_changed_files: 100
     required_checks:
-      - unit-tests
-      - integration-tests
-      - security-scan
+      - e2e
+      - verify
     forbidden_paths:
       - infrastructure/production/*
       - auth/*

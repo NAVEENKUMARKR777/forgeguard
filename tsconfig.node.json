@@ -17,6 +17,8 @@
     "noEmit": true
   },
   "include": [
+    "worker-configuration.d.ts",
+    "types/env-extra.d.ts",
     "evals/**/*.ts",
     "tests/**/*.ts",
     "policy/load-node.ts",
@@ -41,7 +43,6 @@
     "types/gitops.ts",
     "productivity/**/*.ts",
     "types/productivity.ts",
-    "fixtures/gitops/**/*.json",
     "evals/**/*.json"
   ],
   "exclude": ["evals/history-api.ts"]

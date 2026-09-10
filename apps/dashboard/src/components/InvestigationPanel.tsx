@@ -4,6 +4,7 @@ import { RiskBreakdown } from "./RiskBreakdown";
 import { PolicyCard } from "./PolicyCard";
 import { PipelinePanel } from "./PipelinePanel";
 import { ApprovalControls } from "./ApprovalControls";
+import { MergeControls } from "./MergeControls";
 
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
@@ -19,13 +20,17 @@ export function InvestigationPanel({
   pendingApproval,
   steps,
   onApprove,
-  onReject
+  onReject,
+  onMerge,
+  onClose
 }: {
   investigation: Investigation | null;
   pendingApproval: PendingApproval | null;
   steps: PipelineStep[];
   onApprove: () => void;
   onReject: () => void;
+  onMerge: () => void;
+  onClose: () => void;
 }) {
   return (
     <aside className="flex flex-col gap-6 overflow-y-auto border-l border-border p-4">
@@ -50,6 +55,10 @@ export function InvestigationPanel({
 
           <Section title="Policy">
             <PolicyCard policy={investigation.policy} />
+          </Section>
+
+          <Section title="Decision">
+            <MergeControls investigation={investigation} onMerge={onMerge} onClose={onClose} />
           </Section>
         </>
       )}

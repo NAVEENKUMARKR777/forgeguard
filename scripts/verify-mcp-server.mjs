@@ -84,25 +84,25 @@ async function main() {
       `tools/list returns exactly the expected tools (got ${JSON.stringify(toolNames)})`
     );
 
-    const call = await jsonrpc("tools/call", { name: "get_pull_request", arguments: { number: 1842 } });
+    // PR #1 is a real, stable (closed) PR on the configured repo, used here
+    // purely as a fixed target — see docs/decisions/ADR-002. Real GitHub
+    // data, not a fixture.
+    const call = await jsonrpc("tools/call", { name: "get_pull_request", arguments: { number: 1 } });
     const text = call.result.content[0].text;
     const pr = JSON.parse(text);
-    assert(pr.number === 1842, "tools/call get_pull_request(1842) returns PR #1842");
-    assert(pr.service === "payment-service", "returned PR has the expected service field");
+    assert(pr.number === 1, "tools/call get_pull_request(1) returns real PR #1");
+    assert(pr.service === "forgeguard", "returned PR has the expected service field");
 
-    const missing = await jsonrpc("tools/call", { name: "get_pull_request", arguments: { number: 9999 } });
+    const missing = await jsonrpc("tools/call", { name: "get_pull_request", arguments: { number: 999999 } });
     assert(missing.result.isError === true, "tools/call for an unknown PR number returns isError, not a crash");
 
-    const reviews = await jsonrpc("tools/call", { name: "get_reviews", arguments: { number: 1842 } });
+    const reviews = await jsonrpc("tools/call", { name: "get_reviews", arguments: { number: 1 } });
     const reviewList = JSON.parse(reviews.result.content[0].text);
-    assert(Array.isArray(reviewList) && reviewList.length > 0, "tools/call get_reviews(1842) returns the fixture review list");
+    assert(Array.isArray(reviewList), "tools/call get_reviews(1) returns a real (possibly empty) review list");
 
-    const search = await jsonrpc("tools/call", { name: "search_code", arguments: { query: "migrations" } });
+    const search = await jsonrpc("tools/call", { name: "search_code", arguments: { query: "README" } });
     const searchResults = JSON.parse(search.result.content[0].text);
-    assert(
-      searchResults.some((r) => r.path.includes("migrations")),
-      "tools/call search_code('migrations') finds the migration file in PR #1842"
-    );
+    assert(Array.isArray(searchResults), "tools/call search_code('README') returns a real result list");
 
     console.log("\nAll MCP contract checks passed.");
   } catch (error) {

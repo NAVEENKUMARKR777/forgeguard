@@ -3,8 +3,7 @@ import { ensureEngineeringSchema, ensureIncidentSchema } from "../memory/sql";
 import { sqlFromStorage } from "./sql-adapter";
 import { getIncidentsForService, getAllIncidents, recordIncident, type IncidentRow } from "../memory/incidents";
 import { recall, remember, type EngineeringFactRow } from "../memory/engineering";
-import type { IncidentFixture } from "../mcp/types";
-import inc1042 from "../fixtures/incidents/inc-1042.json";
+import type { IncidentRecord } from "../mcp/types";
 
 /**
  * Cross-session engineering memory: incident history and free-text
@@ -21,10 +20,9 @@ export class EngineeringMemoryStore extends DurableObject<Env> {
     const sql = sqlFromStorage(ctx.storage.sql);
     ensureIncidentSchema(sql);
     ensureEngineeringSchema(sql);
-    recordIncident(sql, inc1042 as IncidentFixture);
   }
 
-  recordIncident(incident: IncidentFixture): void {
+  recordIncident(incident: IncidentRecord): void {
     recordIncident(sqlFromStorage(this.ctx.storage.sql), incident);
   }
 

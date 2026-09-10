@@ -33,7 +33,6 @@
     "incident/**/*.ts",
     "remediation/**/*.ts",
     "observability/**/*.ts",
-    "fixtures/**/*.json",
     "worker-configuration.d.ts",
     "types/env-extra.d.ts",
     "types/gitops.ts",

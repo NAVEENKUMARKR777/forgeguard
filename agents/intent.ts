@@ -7,6 +7,8 @@ export type Intent =
   | { kind: "reject" }
   | { kind: "investigate_incident" }
   | { kind: "remember"; service: string; note: string }
+  | { kind: "merge_pr" }
+  | { kind: "close_pr" }
   | { kind: "general" };
 
 /**
@@ -20,6 +22,13 @@ export function classifyIntent(text: string): Intent {
 
   if (/\b(approve)\b/.test(normalized)) return { kind: "approve" };
   if (/\b(reject|deny|decline)\b/.test(normalized)) return { kind: "reject" };
+
+  if (/\bmerge\b.*\b(pr|pull request|this)\b|\bmerge (it|this)\b/.test(normalized)) {
+    return { kind: "merge_pr" };
+  }
+  if (/\bclose\b.*\b(pr|pull request|this)\b|\bclose (it|this)\b/.test(normalized)) {
+    return { kind: "close_pr" };
+  }
 
   const rememberMatch = text.match(/\bremember(?:\s+that)?\s+(\S+)\s+(.+)/i);
   if (rememberMatch) {

@@ -1,52 +1,50 @@
 import { WorkflowEntrypoint, type WorkflowEvent, type WorkflowStep } from "cloudflare:workers";
-import { getService } from "../mcp/github";
+import { getPullRequest } from "../mcp/github";
+import type { PullRequestCheck } from "../mcp/types";
 
 export interface RemediationWorkflowParams {
   prNumber: number;
-  service: string;
 }
 
 export interface RemediationWorkflowResult {
   prNumber: number;
-  strategy: string;
-  outcome: "promoted" | "halted";
-  steps: string[];
+  outcome: "ci_passed" | "ci_failed" | "ci_timed_out";
+  checks: PullRequestCheck[];
 }
 
+const MAX_POLLS = 10;
+const POLL_INTERVAL = "30 seconds";
+
 /**
- * The deploy pipeline that runs once a release is approved (or auto-approved).
- * Separate from ReleaseWorkflow (analysis + policy + approval) per
- * docs/decisions/ADR-004 — this is the "actually roll it out" half. Every
- * step here is a deterministic simulation over fixture data, not a real
- * deploy — there is no live infrastructure behind "canary"/"promote". See
- * README's "what's real vs. what's a placeholder" table.
+ * Waits for real CI on the approved PR, then reports real pass/fail — this
+ * used to simulate a canary→promote→verify rollout over fixture data
+ * (there's no real traffic-splitting infrastructure behind a single
+ * Worker to make that real). Merging is a separate, human-triggered
+ * decision (see agents/release-agent.ts#mergePullRequest) informed by
+ * this result, not gated by it. Durable across the whole wait — real CI
+ * can take minutes, which is exactly the case Workflows exist for.
  */
 export class RemediationWorkflow extends WorkflowEntrypoint<Env, RemediationWorkflowParams> {
   async run(event: WorkflowEvent<RemediationWorkflowParams>, step: WorkflowStep): Promise<RemediationWorkflowResult> {
-    const { prNumber, service } = event.payload;
-    const meta = getService(service);
-    const strategy = meta?.deployment_strategy ?? "canary";
+    const { prNumber } = event.payload;
 
-    await step.do("deploy-canary", async () => ({ strategy, startedAt: Date.now() }));
+    for (let attempt = 0; attempt < MAX_POLLS; attempt++) {
+      const checks = await step.do(`check-ci-${attempt}`, async () => {
+        const pr = await getPullRequest(this.env, prNumber);
+        return pr?.checks ?? [];
+      });
 
-    // Stand-in for a real bake period (proposal's Scene 4 uses "5 minutes");
-    // shortened so the workflow is observable in a local demo.
-    await step.sleep("wait-for-canary", "10 seconds");
+      const stillPending = checks.length === 0 || checks.some((c) => c.status === "pending");
+      if (!stillPending) {
+        const anyFailed = checks.some((c) => c.status === "failed");
+        return { prNumber, outcome: anyFailed ? "ci_failed" : "ci_passed", checks };
+      }
 
-    const health = await step.do("check-health", async () => ({ healthy: true }));
-
-    if (!health.healthy) {
-      return { prNumber, strategy, outcome: "halted", steps: ["deploy-canary", "wait-for-canary", "check-health:unhealthy"] };
+      if (attempt < MAX_POLLS - 1) {
+        await step.sleep(`wait-${attempt}`, POLL_INTERVAL);
+      }
     }
 
-    await step.do("promote", async () => ({ promotedAt: Date.now() }));
-    await step.do("verify", async () => ({ verified: true }));
-
-    return {
-      prNumber,
-      strategy,
-      outcome: "promoted",
-      steps: ["deploy-canary", "wait-for-canary", "check-health", "promote", "verify"]
-    };
+    return { prNumber, outcome: "ci_timed_out", checks: [] };
   }
 }

@@ -7,8 +7,8 @@ test("evals: renders real suite results and run history", async ({ page }) => {
   await page.goto("/evals");
   await expect(page.locator("text=/[0-9]+ passed/")).toBeVisible({ timeout: 10_000 });
 
-  // All 7 suites from evals/run.ts should be represented.
-  for (const suite of ["risk", "tool-selection", "policy", "memory", "incident", "remediation", "regression"]) {
+  // All 6 suites from evals/run.ts should be represented.
+  for (const suite of ["risk", "tool-selection", "policy", "memory", "incident", "remediation"]) {
     await expect(page.locator(`text=${suite}`).first()).toBeVisible();
   }
 
